@@ -33,7 +33,7 @@ export default function AppNavBar({ navigationItems }: { navigationItems: Naviga
       })}
     >
       {isLandingPage && <Announcement />}
-      <nav className='flex items-center justify-between p-6 lg:px-8' aria-label='Global'>
+      <nav className='flex items-center justify-between p-3 lg:px-8' aria-label='Global'>
         <div className='flex items-center lg:flex-1'>
           <WaspRouterLink
             to={routes.LandingPageRoute.to}

@@ -12,11 +12,11 @@ const ProtectedLayout: FC<LayoutProps> = ({ children }) => {
   if (isLoading) return <>Loading...</>
   if (!data) return <Navigate to={`/login?next=${location.pathname}`} />
   return (
-    <main className="grid grid-cols-[15rem_auto] h-full overflow-auto">
-      <div className="bg-slate-900 h-[calc(100vh-3.5rem)] text-white p-5 pt-10">
+    <main className="grid grid-cols-[15rem_auto] h-[calc(100vh-3.5rem)] ">
+      <div className="bg-slate-900 h-[calc(100vh-3.5rem)] fix  text-white p-5 pt-10">
         <SideBar />
       </div>
-      <div>{children}</div>
+      <div className="overflow-auto">{children}</div>
     </main>
   );
 };

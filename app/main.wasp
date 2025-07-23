@@ -248,6 +248,16 @@ query getDownloadFileSignedURL {
   fn: import { getDownloadFileSignedURL } from "@src/file-upload/operations",
   entities: [User, File]
 }
+
+query getAllDocuments {
+  fn: import { getAllDocuments } from "@src/file-upload/documentQueries",
+  entities: [User, Document]
+}
+
+action createDocument {
+  fn: import { createDocument } from "@src/file-upload/documentOperations",
+  entities: [User, Document]
+}
 //#endregion
 
 //#region Analytics

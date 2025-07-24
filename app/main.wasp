@@ -258,6 +258,11 @@ action createDocument {
   fn: import { createDocument } from "@src/file-upload/documentOperations",
   entities: [User, Document]
 }
+
+query getDownloadDocumentSignedURL {
+  fn: import { getDownloadDocumentSignedURL } from "@src/file-upload/documentOperations",
+  entities: [User, Document]
+}
 //#endregion
 
 //#region Analytics

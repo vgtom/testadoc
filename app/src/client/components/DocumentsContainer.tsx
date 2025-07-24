@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { useQuery, getAllDocuments, createDocument } from 'wasp/client/operations';
+import { useQuery, getAllDocuments, createDocument, getDownloadDocumentSignedURL } from 'wasp/client/operations';
 
 const statusColors = {
   Draft: 'bg-yellow-100 text-yellow-800',
@@ -11,9 +11,7 @@ export default function DocumentsContainer() {
   const { data: documents, isLoading, error, refetch } = useQuery(getAllDocuments);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleUploadClick = () => {
-    inputRef.current?.click();
-  };
+  const handleUploadClick = () => inputRef.current?.click();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,7 +26,15 @@ export default function DocumentsContainer() {
     e.target.value = '';
   };
 
-  if (isLoading) return <div>Loading documents...</div>;
+  const handleViewClick = async (key: string) => {
+    try {
+      const signedUrl = await getDownloadDocumentSignedURL({ key });
+      window.open(signedUrl, '_blank');
+    } catch (err) {
+      alert('Failed to generate secure URL.');
+    }
+  };
+
   if (error) return <div>Error loading documents.</div>;
 
   return (
@@ -42,12 +48,12 @@ export default function DocumentsContainer() {
       </button>
       <input
         ref={inputRef}
-        id="document-upload-input"
         type="file"
         accept="application/pdf"
         style={{ display: 'none' }}
         onChange={handleFileChange}
       />
+
       <div className="space-y-2">
         {!documents || documents.length === 0 ? (
           <div>No documents found.</div>
@@ -56,9 +62,20 @@ export default function DocumentsContainer() {
             <div key={doc.id} className="flex items-center justify-between p-3 border rounded shadow-sm">
               <div>
                 <span className="font-medium">{doc.name}</span>
-                <a href={doc.url} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 underline">View</a>
+                <button
+                  onClick={() => handleViewClick(doc.key)}
+                  className="ml-2 text-blue-600 underline"
+                >
+                  View
+                </button>
               </div>
-              <span className={`px-2 py-1 rounded text-xs font-semibold || 'bg-gray-100 text-gray-800'}`}>{doc.status}</span>
+              <span
+                className={`px-2 py-1 rounded text-xs font-semibold ${
+                  statusColors[doc.status as "Signed" | "Draft" | "Sent"] || 'bg-gray-100 text-gray-800'
+                }`}
+              >
+                {doc.status}
+              </span>
             </div>
           ))
         )}

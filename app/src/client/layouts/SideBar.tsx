@@ -56,7 +56,7 @@ const SideBar: FC = () => {
         <p>Account</p>
       </Link>
 
-      <Link
+      {/* <Link
         className={cn(
           "flex items-center gap-3 p-3 rounded-md",
           activePath === routes.DocumentPreviewRoute.build({ params: { documentId: '1' } })
@@ -67,7 +67,7 @@ const SideBar: FC = () => {
       >
         <MdDashboard />
         <p>Preview Doc</p>
-      </Link>
+      </Link> */}
     </aside>
   );
 };

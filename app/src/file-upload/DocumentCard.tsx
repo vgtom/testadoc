@@ -4,6 +4,7 @@ import PdfThumbnailIcon from "../client/static/pdf_thumb.png";
 import { getDownloadDocumentSignedURL } from "wasp/client/operations";
 import { Button } from "../components/ui/button";
 import { cn } from "../lib/utils";
+import { useNavigate } from "react-router-dom";
 
 const statusColors = {
   Draft: "bg-yellow-100 text-yellow-800 border-yellow-300 border",
@@ -16,6 +17,14 @@ export const DocumentCard = ({ doc }: { doc: Document }) => {
     try {
       const signedUrl = await getDownloadDocumentSignedURL({ key });
       window.open(signedUrl, "_blank");
+    } catch (err) {
+      alert("Failed to generate secure URL.");
+    }
+  };
+  const navigate = useNavigate()
+  const handleEditClick = async (id: string) => {
+    try {
+      navigate(`/documents/${id}`)
     } catch (err) {
       alert("Failed to generate secure URL.");
     }
@@ -50,7 +59,7 @@ export const DocumentCard = ({ doc }: { doc: Document }) => {
           <Button
             className="w-fit h-fit pl-0"
             variant={"link"}
-            onClick={() => handleViewClick(doc.key)}
+            onClick={() => handleEditClick(doc.id)}
           >
             Edit
           </Button>

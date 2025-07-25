@@ -6,6 +6,8 @@ import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
 import { MAX_FILE_SIZE_BYTES } from './validation';
 
 const s3Client = new S3Client({
+  endpoint: process.env.AWS_S3_ENDPOINT,
+  forcePathStyle: true,
   region: process.env.AWS_S3_REGION,
   credentials: {
     accessKeyId: process.env.AWS_S3_IAM_ACCESS_KEY!,

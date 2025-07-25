@@ -52,10 +52,10 @@ app OpenSaaS {
         userSignupFields: import { getEmailUserFields } from "@src/auth/userSignupFields",
       },
       // Uncomment to enable Google Auth (check https://wasp.sh/docs/auth/social-auth/google for setup instructions):
-      // google: { // Guide for setting up Auth via Google
-      //   userSignupFields: import { getGoogleUserFields } from "@src/auth/userSignupFields",
-      //   configFn: import { getGoogleAuthConfig } from "@src/auth/userSignupFields",
-      // },
+      google: { // Guide for setting up Auth via Google
+        userSignupFields: import { getGoogleUserFields } from "@src/auth/userSignupFields",
+        configFn: import { getGoogleAuthConfig } from "@src/auth/userSignupFields",
+      },
       // Uncomment to enable GitHub Auth (check https://wasp.sh/docs/auth/social-auth/github for setup instructions):
       // gitHub: {
       //   userSignupFields: import { getGitHubUserFields } from "@src/auth/userSignupFields",
@@ -68,7 +68,7 @@ app OpenSaaS {
       // }
     },
     onAuthFailedRedirectTo: "/login",
-    onAuthSucceededRedirectTo: "/demo-app",
+    onAuthSucceededRedirectTo: "/dashboard",
   },
 
   db: {
@@ -127,6 +127,19 @@ page EmailVerificationPage {
   component: import { EmailVerificationPage } from "@src/auth/email-and-pass/EmailVerificationPage",
 }
 //#endregion
+
+
+//#region SignerApp 
+
+route DashboardRoute { path: "/dashboard", to: DashboardPage}
+page DashboardPage {
+  component: import DashboardPage from "@src/client/pages/DashboardPage"
+}
+
+route SettingsRoute { path: "/settings", to: SettingsPage}
+page SettingsPage {
+  component: import SettingsPage from "@src/client/pages/SettingsPage"
+}
 
 //#region User
 route AccountRoute { path: "/account", to: AccountPage }
@@ -234,6 +247,21 @@ query getAllFilesByUser {
 query getDownloadFileSignedURL {
   fn: import { getDownloadFileSignedURL } from "@src/file-upload/operations",
   entities: [User, File]
+}
+
+query getAllDocuments {
+  fn: import { getAllDocuments } from "@src/file-upload/documentQueries",
+  entities: [User, Document]
+}
+
+action createDocument {
+  fn: import { createDocument } from "@src/file-upload/documentOperations",
+  entities: [User, Document]
+}
+
+query getDownloadDocumentSignedURL {
+  fn: import { getDownloadDocumentSignedURL } from "@src/file-upload/documentOperations",
+  entities: [User, Document]
 }
 //#endregion
 

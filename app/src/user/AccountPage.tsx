@@ -3,8 +3,9 @@ import { SubscriptionStatus, prettyPaymentPlanName, parsePaymentPlanId } from '.
 import { getCustomerPortalUrl, useQuery } from 'wasp/client/operations';
 import { Link as WaspRouterLink, routes } from 'wasp/client/router';
 import { logout } from 'wasp/client/auth';
+import withProtectedLayout from '../client/HOC/withProtectedLayout';
 
-export default function AccountPage({ user }: { user: User }) {
+export function AccountPage({ user }: { user: User }) {
   return (
     <div className='mt-10 px-6'>
       <div className='overflow-hidden border border-gray-900/10 shadow-lg sm:rounded-lg mb-4 lg:m-8 dark:border-gray-100/10'>
@@ -177,3 +178,5 @@ function CustomerPortalButton() {
     </div>
   );
 }
+
+export default withProtectedLayout(AccountPage, "Account")

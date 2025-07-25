@@ -68,7 +68,7 @@ app OpenSaaS {
       // }
     },
     onAuthFailedRedirectTo: "/login",
-    onAuthSucceededRedirectTo: "/dashboard",
+    onAuthSucceededRedirectTo: "/documents",
   },
 
   db: {
@@ -131,14 +131,19 @@ page EmailVerificationPage {
 
 //#region SignerApp 
 
-route DashboardRoute { path: "/dashboard", to: DashboardPage}
-page DashboardPage {
-  component: import DashboardPage from "@src/client/pages/DashboardPage"
+route DocumentsRoute { path: "/documents", to: DocumentsPage}
+page DocumentsPage {
+  component: import DocumentsPage from "@src/client/pages/DocumentsPage"
 }
 
 route SettingsRoute { path: "/settings", to: SettingsPage}
 page SettingsPage {
   component: import SettingsPage from "@src/client/pages/SettingsPage"
+}
+
+route DocumentPreviewRoute { path: "/documents/:documentId", to: DocumentPreviewPage }
+page DocumentPreviewPage {
+  component: import DocumentPreviewPage from "@src/client/pages/DocumentPreviewPage"
 }
 
 //#region User
@@ -259,8 +264,18 @@ action createDocument {
   entities: [User, Document]
 }
 
+query getDocumentById {
+  fn: import { getDocumentById } from "@src/file-upload/documentOperations",
+  entities: [User, Document]
+}
+
 query getDownloadDocumentSignedURL {
   fn: import { getDownloadDocumentSignedURL } from "@src/file-upload/documentOperations",
+  entities: [User, Document]
+}
+
+query getDownloadDocumentSignedURLByDocId {
+  fn: import { getDownloadDocumentSignedURLByDocId } from "@src/file-upload/documentOperations",
   entities: [User, Document]
 }
 //#endregion

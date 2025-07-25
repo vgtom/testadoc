@@ -11,7 +11,7 @@ import { cn } from "../cn";
 const sidebarContents = [
   {
     name: "Dashboard",
-    to: routes.DashboardRoute.to,
+    to: routes.DocumentsRoute.to,
     icon: <MdDashboard />,
   },
   {
@@ -54,6 +54,19 @@ const SideBar: FC = () => {
       >
         <MdAccountCircle />
         <p>Account</p>
+      </Link>
+
+      <Link
+        className={cn(
+          "flex items-center gap-3 p-3 rounded-md",
+          activePath === routes.DocumentPreviewRoute.build({ params: { documentId: '1' } })
+            ? "bg-slate-700"
+            : "bg-slate-900 hover:bg-slate-800"
+        )}
+        to={routes.DocumentPreviewRoute.build({ params: { documentId: '1' } }) as any}
+      >
+        <MdDashboard />
+        <p>Preview Doc</p>
       </Link>
     </aside>
   );

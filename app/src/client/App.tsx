@@ -8,6 +8,8 @@ import { routes } from "wasp/client/router";
 import { Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "wasp/client/auth";
 import { useIsLandingPage } from "./hooks/useIsLandingPage";
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 /**
  * use this component to wrap all child components
@@ -34,7 +36,6 @@ export default function App() {
     return location.pathname.startsWith("/admin");
   }, [location]);
 
-
   useEffect(() => {
     if (location.hash) {
       const id = location.hash.replace("#", "");
@@ -46,7 +47,7 @@ export default function App() {
   }, [location]);
 
   return (
-    <>
+    <DndProvider backend={HTML5Backend}>
       <div className="min-h-screen dark:text-white dark:bg-boxdark-2">
         {isAdminDashboard ? (
           <Outlet />
@@ -62,6 +63,6 @@ export default function App() {
         )}
       </div>
       <CookieConsentBanner />
-    </>
+    </DndProvider>
   );
 }

@@ -2,9 +2,9 @@ import React, { FC } from 'react'
 import ProtectedLayout from '../layouts/ProtectedLayout'
 import withHeader from '../HOC/withProtectedLayout'
 import FileUploadPage from '../../file-upload/FileUploadPage'
-import DocumentsContainer from '../components/DocumentsContainer'
+import DocumentsContainer from '../../file-upload/DocumentsContainer'
 
-const DashboardPage: FC = () => {
+const DocumentsPage: FC = () => {
   return (
     <div>
         {/* <FileUploadPage /> */}
@@ -13,4 +13,4 @@ const DashboardPage: FC = () => {
   )
 }
 
-export default withHeader(DashboardPage, "Dashboard") 
+export default withHeader(DocumentsPage, "Documents") 

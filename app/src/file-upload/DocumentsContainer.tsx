@@ -119,13 +119,13 @@ export default function DocumentsContainer() {
             >
               Start signing, upload file
             </Button>
-            {/* <Input
+            <Input
               ref={inputRef}
               type="file"
               accept="application/pdf"
               className="hidden"
               onChange={handleFileChange}
-            /> */}
+            />
             {/* <span className="text-gray-500">or use the upload button</span> */}
           </div>
           {uploadError && (

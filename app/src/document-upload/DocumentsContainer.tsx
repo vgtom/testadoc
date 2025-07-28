@@ -13,9 +13,7 @@ import { Input } from "../components/ui/input";
 import { cn } from "../lib/utils";
 import { useDrop } from "react-dnd";
 import { type Document } from "wasp/entities";
-import { DocumentCard } from "./DocumentCard";
-
-
+import { DocumentCard } from "./components/DocumentCard";
 
 // DnD item type for file
 const FILE = "FILE";
@@ -92,8 +90,6 @@ export default function DocumentsContainer() {
     if (file) handleFileUpload(file);
     e.target.value = "";
   };
-
-
 
   if (error)
     return (
@@ -223,23 +219,10 @@ export default function DocumentsContainer() {
         )}
       >
         {uploadingFile && (
-          <div className="flex  items-center justify-between p-4 border rounded-lg shadow-lg bg-white">
-            <div>
-              <span className="font-medium">{uploadingFile.name}</span>
-              <span className="ml-2 text-xs text-gray-400">Uploading...</span>
-            </div>
-            <div className="flex flex-col items-end min-w-[120px]">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-blue-500 h-2 rounded-full transition-all"
-                  style={{ width: `${uploadProgressPercent}%` }}
-                ></div>
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {uploadProgressPercent}%
-              </div>
-            </div>
-          </div>
+          <DocumentCard
+            doc={{}}
+            uploadProgressPercent={uploadProgressPercent}
+          />
         )}
         {documents.map((doc: Document) => (
           <DocumentCard doc={doc} />

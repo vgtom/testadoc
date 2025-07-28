@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { pdfjs } from "react-pdf";
+import { Document, Page, pdfjs } from "react-pdf";
 import { getDownloadDocumentSignedURLByDocId } from "wasp/client/operations";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
 import withProtectedLayout from "../HOC/withProtectedLayout";
-import { DocumentPreview } from "../../document-upload/DocumentPreview";
+import DocumentEditor from "../../document-upload/DocumentEditor";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -52,9 +52,13 @@ const DocumentPreviewPage = () => {
     return () => resizeObserver.disconnect();
   }, []);
 
+  const handleLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+  };
+
   return (
-    <div className="p-8">
-      <DocumentPreview fileUrl={fileUrl} />
+    <div >
+      <DocumentEditor fileUrl={fileUrl} />
     </div>
   );
 };

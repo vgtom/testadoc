@@ -146,6 +146,11 @@ page DocumentPreviewPage {
   component: import DocumentPreviewPage from "@src/client/pages/DocumentPreviewPage"
 }
 
+route DocumentEditorRoute { path: "/document_editor/:documentId", to: DocumentEditorPage }
+page DocumentEditorPage {
+  component: import DocumentEditorPage from "@src/client/pages/DocumentEditorPage"
+}
+
 //#region User
 route AccountRoute { path: "/account", to: AccountPage }
 page AccountPage {
@@ -232,50 +237,29 @@ api paymentsWebhook {
 }
 //#endregion
 
-//#region File Upload
-route FileUploadRoute { path: "/file-upload", to: FileUploadPage }
-page FileUploadPage {
-  authRequired: true,
-  component: import FileUpload from "@src/file-upload/FileUploadPage"
-}
-
-action createFile {
-  fn: import { createFile } from "@src/file-upload/operations",
-  entities: [User, File]
-}
-
-query getAllFilesByUser {
-  fn: import { getAllFilesByUser } from "@src/file-upload/operations",
-  entities: [User, File]
-}
-
-query getDownloadFileSignedURL {
-  fn: import { getDownloadFileSignedURL } from "@src/file-upload/operations",
-  entities: [User, File]
-}
-
+//#region Document Upload
 query getAllDocuments {
-  fn: import { getAllDocuments } from "@src/file-upload/documentQueries",
+  fn: import { getAllDocuments } from "@src/document-upload/documentQueries",
   entities: [User, Document]
 }
 
 action createDocument {
-  fn: import { createDocument } from "@src/file-upload/documentOperations",
+  fn: import { createDocument } from "@src/document-upload/documentOperations",
   entities: [User, Document]
 }
 
 query getDocumentById {
-  fn: import { getDocumentById } from "@src/file-upload/documentOperations",
+  fn: import { getDocumentById } from "@src/document-upload/documentOperations",
   entities: [User, Document]
 }
 
 query getDownloadDocumentSignedURL {
-  fn: import { getDownloadDocumentSignedURL } from "@src/file-upload/documentOperations",
+  fn: import { getDownloadDocumentSignedURL } from "@src/document-upload/documentOperations",
   entities: [User, Document]
 }
 
 query getDownloadDocumentSignedURLByDocId {
-  fn: import { getDownloadDocumentSignedURLByDocId } from "@src/file-upload/documentOperations",
+  fn: import { getDownloadDocumentSignedURLByDocId } from "@src/document-upload/documentOperations",
   entities: [User, Document]
 }
 //#endregion

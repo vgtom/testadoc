@@ -3,7 +3,7 @@ import { HttpError } from "wasp/server";
 import { type Document } from "wasp/entities";
 import { getDownloadFileSignedURLFromS3, getUploadFileSignedURLFromS3 } from "../file-upload/s3Utils";
 import { ensureArgsSchemaOrThrowHttpError } from "../server/validation";
-import type { CreateDocument, GetDownloadDocumentSignedURL } from "wasp/server/operations";
+import type { CreateDocument, GetDownloadDocumentSignedURL, GetDocumentById, GetDownloadDocumentSignedURLByDocId } from "wasp/server/operations";
 
 const createDocumentInputSchema = z.object({
   fileName: z.string().nonempty(),
@@ -79,7 +79,39 @@ type GetDownloadFileSignedURLInput = z.infer<typeof getDownloadFileSignedURLInpu
 export const getDownloadDocumentSignedURL: GetDownloadDocumentSignedURL<
   GetDownloadFileSignedURLInput,
   string
-> = async (rawArgs, _context) => {
+> = async (rawArgs, context) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
   const { key } = ensureArgsSchemaOrThrowHttpError(getDownloadFileSignedURLInputSchema, rawArgs);
+  // Ensure the document belongs to the current user
+  const doc = await context.entities.Document.findFirst({ where: { key, userId: context.user.id } });
+  if (!doc) {
+    throw new HttpError(403, 'You do not have access to this document.');
+  }
   return await getDownloadFileSignedURLFromS3({ key });
+};
+
+const getDownloadFileSignedURLByIdInputSchema = z.object({ id: z.string().nonempty() });
+
+
+type GetDownloadFileSignedURLByIdInput = z.infer<typeof getDownloadFileSignedURLByIdInputSchema>;
+
+
+export const getDownloadDocumentSignedURLByDocId: GetDownloadDocumentSignedURLByDocId<
+GetDownloadFileSignedURLByIdInput,
+string
+> = async (rawArgs, context) => {
+  if (!context.user) throw new HttpError(401);
+  const { id } = rawArgs; // id is string
+  const doc = await context.entities.Document.findFirst({ where: { id: id, userId: context.user.id } });
+  if (!doc) throw new HttpError(404, 'Document not found');
+  return await getDownloadFileSignedURLFromS3({ key: doc.key });
+};
+
+export const getDocumentById: GetDocumentById<{ id: string | undefined }, Document | null> = async (args, context) => {
+  if (!context.user) throw new HttpError(401);
+  const doc = await context.entities.Document.findFirst({ where: { id: args.id, userId: context.user.id } });
+  if (!doc) throw new HttpError(404, 'Document not found');
+  return doc;
 };

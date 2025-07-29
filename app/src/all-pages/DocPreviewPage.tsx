@@ -3,8 +3,8 @@ import { useParams } from "react-router-dom";
 import { pdfjs } from "react-pdf";
 import { getDownloadDocumentSignedURLByDocId } from "wasp/client/operations";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
-import withProtectedLayout from "../HOC/withProtectedLayout";
-import { DocumentPreview } from "../../document-upload/DocumentPreview";
+import withProtectedLayout from "../client/HOC/withProtectedLayout";
+import { DocumentPreview } from "../features/document/containers/Preview";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;

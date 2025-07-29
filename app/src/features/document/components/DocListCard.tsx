@@ -1,8 +1,8 @@
 import React from "react";
 import { Document } from "wasp/entities";
-import PdfThumbnailIcon from "../../client/static/pdf_thumb.png";
-import { Button } from "../../components/ui/button";
-import { cn } from "../../lib/utils";
+import PdfThumbnailIcon from "../../../client/static/pdf_thumb.png";
+import { Button } from "../../../components/ui/button";
+import { cn } from "../../../lib/utils";
 import { useNavigate } from "react-router-dom";
 
 const statusColors = {

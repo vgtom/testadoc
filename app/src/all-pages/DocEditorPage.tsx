@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Document, Page, pdfjs } from "react-pdf";
+import { pdfjs } from "react-pdf";
 import { getDownloadDocumentSignedURLByDocId } from "wasp/client/operations";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
-import withProtectedLayout from "../HOC/withProtectedLayout";
-import DocumentEditor from "../../document-upload/DocumentEditor";
+import withProtectedLayout from "../client/HOC/withProtectedLayout";
+import DocumentEditor from "../features/document/containers/Editor";
+import { getDocumentById } from "wasp/client/operations";
+import { Document, DocumentEdit } from "wasp/entities";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -13,6 +15,7 @@ const DocumentPreviewPage = () => {
   const { documentId } = useParams();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [doc, setDoc] = useState<Document & { edits: DocumentEdit[] } | null>(null)
   const [numPages, setNumPages] = useState<number | null>(null);
   const [width, setWidth] = useState<number>(800); // Default width
   const [loading, setLoading] = useState(true);
@@ -27,6 +30,7 @@ const DocumentPreviewPage = () => {
         if (!documentId) throw new Error("Document ID is missing");
         const url = await getDownloadDocumentSignedURLByDocId({ id: documentId });
         setFileUrl(url);
+        getDocumentById({id: documentId}).then(res => setDoc(res))
       } catch (err: any) {
         setError(err.message || "Failed to load PDF URL");
       } finally {
@@ -58,7 +62,7 @@ const DocumentPreviewPage = () => {
 
   return (
     <div >
-      <DocumentEditor fileUrl={fileUrl} />
+      <DocumentEditor fileUrl={fileUrl} doc={doc} />
     </div>
   );
 };

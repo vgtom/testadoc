@@ -1,9 +1,6 @@
-import React, { FC, useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { FC, useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import { getDownloadDocumentSignedURLByDocId } from "wasp/client/operations";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
-import withProtectedLayout from "../client/HOC/withProtectedLayout";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;

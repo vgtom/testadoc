@@ -7,13 +7,13 @@ import {
 import {
   uploadDocumentWithProgress,
   type FileUploadError,
-} from "./documentUploading";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { cn } from "../lib/utils";
+} from "../documentUploading";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { cn } from "../../../lib/utils";
 import { useDrop } from "react-dnd";
 import { type Document } from "wasp/entities";
-import { DocumentCard } from "./components/DocumentCard";
+import { DocumentCard } from "../components/DocListCard";
 
 // DnD item type for file
 const FILE = "FILE";
@@ -225,7 +225,7 @@ export default function DocumentsContainer() {
           />
         )}
         {documents.map((doc: Document) => (
-          <DocumentCard doc={doc} />
+          <DocumentCard doc={doc} key={doc.id} />
         ))}
       </div>
     </div>

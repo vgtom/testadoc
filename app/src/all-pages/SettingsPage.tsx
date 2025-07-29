@@ -1,6 +1,5 @@
 import React, { FC } from "react";
-import ProtectedLayout from "../layouts/ProtectedLayout";
-import withProtectedLayout from "../HOC/withProtectedLayout";
+import withProtectedLayout from "../client/HOC/withProtectedLayout";
 
 const SettingsPage: FC = () => {
   return <div>Settings</div>;

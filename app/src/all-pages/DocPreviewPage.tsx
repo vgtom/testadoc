@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Document, Page, pdfjs } from "react-pdf";
+import { pdfjs } from "react-pdf";
 import { getDownloadDocumentSignedURLByDocId } from "wasp/client/operations";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
-import withProtectedLayout from "../../client/HOC/withProtectedLayout";
+import withProtectedLayout from "../client/HOC/withProtectedLayout";
+import { DocumentPreview } from "../features/document/containers/Preview";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -51,33 +52,11 @@ const DocumentPreviewPage = () => {
     return () => resizeObserver.disconnect();
   }, []);
 
-  const handleLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
-  };
-
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Document Preview</h1>
-      {loading && <p>Loading PDF...</p>}
-      {error && <p className="text-red-500">{error}</p>}
-
-      <div ref={containerRef} className="border p-4 bg-white w-full">
-        {fileUrl && (
-          <Document file={fileUrl} onLoadSuccess={handleLoadSuccess} onLoadError={(e) => setError(e.message)}>
-            {Array.from(new Array(numPages), (_, index) => (
-              <Page
-                key={`page_${index + 1}`}
-                pageNumber={index + 1}
-                width={width}
-                renderTextLayer={false}
-                
-              />
-            ))}
-          </Document>
-        )}
-      </div>
+      <DocumentPreview fileUrl={fileUrl} />
     </div>
   );
 };
 
-export default withProtectedLayout(DocumentPreviewPage, "Edit");
+export default withProtectedLayout(DocumentPreviewPage);

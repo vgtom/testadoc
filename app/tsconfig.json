@@ -23,7 +23,6 @@
     "skipLibCheck": true,
     "allowJs": true,
     "outDir": ".wasp/out/user",
-    "baseUrl": "./src",
     "paths": {
       "wasp/*": ["../.wasp/out/sdk/index.ts"]
     }

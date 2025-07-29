@@ -70,18 +70,42 @@ enum Status {
   Signed
 }
 
+enum EditType {
+  TEXT
+  IMAGE
+  PLACEHOLDER
+  TEMPLATE_DATE
+  TEMPLATE_INITIAL
+  TEMPLATE_SIGN
+}
+
 model Document {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
-
   user   User     @relation(fields: [userId], references: [id])
   userId String
-
   name   String
   key    String   @default("")
   status Status   @default(Draft) // Draft, Sent, Signed
   url    String
+  edits     DocumentEdit[]
 }
+
+model DocumentEdit {
+  id            String      @id @default(uuid())
+  createdAt     DateTime    @default(now())
+  type          EditType
+  value         String
+  pageNumber    Int
+  xPercent      Float
+  yPercent      Float
+  widthPercent  Float
+  heightPercent Float
+  document      Document    @relation(fields: [documentId], references: [id])
+  documentId    String
+}
+
+
 
 model DailyStats {
   id   Int      @id @default(autoincrement())

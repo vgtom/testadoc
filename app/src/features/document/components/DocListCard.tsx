@@ -1,9 +1,8 @@
 import React from "react";
 import { Document } from "wasp/entities";
-import PdfThumbnailIcon from "../client/static/pdf_thumb.png";
-import { getDownloadDocumentSignedURL } from "wasp/client/operations";
-import { Button } from "../components/ui/button";
-import { cn } from "../lib/utils";
+import PdfThumbnailIcon from "../../../client/static/pdf_thumb.png";
+import { Button } from "../../../components/ui/button";
+import { cn } from "../../../lib/utils";
 import { useNavigate } from "react-router-dom";
 
 const statusColors = {
@@ -12,19 +11,26 @@ const statusColors = {
   Signed: "bg-green-100 text-green-800 border-green-300 border",
 };
 
-export const DocumentCard = ({ doc }: { doc: Document }) => {
-  const handleViewClick = async (key: string) => {
+export const DocumentCard = ({
+  doc,
+  uploadProgressPercent,
+}: {
+  doc: Partial<Document>;
+  uploadProgressPercent?: number;
+}) => {
+  const navigate = useNavigate();
+
+  const handleViewClick = async () => {
     try {
-      const signedUrl = await getDownloadDocumentSignedURL({ key });
-      window.open(signedUrl, "_blank");
+      navigate(`/documents/${doc.id}`);
     } catch (err) {
       alert("Failed to generate secure URL.");
     }
   };
-  const navigate = useNavigate()
-  const handleEditClick = async (id: string) => {
+
+  const handleEditClick = async () => {
     try {
-      navigate(`/documents/${id}`)
+      navigate(`/document_editor/${doc.id}`);
     } catch (err) {
       alert("Failed to generate secure URL.");
     }
@@ -38,32 +44,45 @@ export const DocumentCard = ({ doc }: { doc: Document }) => {
       <div className="w-[100px] h-full max-lg:h-[100px] max-lg:w-full  bg-gray-200 rounded-md flex justify-center items-center p-5">
         <img className="max-h-[85%]" src={PdfThumbnailIcon} alt="" />
       </div>
-      <div className="flex flex-col justify-between gap-2">
+      <div className="flex flex-col justify-between gap-2 w-full">
         <p className="font-medium text-sm text-gray-900">{doc.name}</p>
-        <span
+        {doc.status && <span
           className={cn(
             statusColors[doc.status],
             "w-fit h-fit text-xs px-1 py-[.5px] rounded-sm"
           )}
         >
           {doc.status}
-        </span>
+        </span>}
         <div className="flex gap-2">
           <Button
             className="w-fit h-fit pl-0"
             variant={"link"}
-            onClick={() => handleViewClick(doc.key)}
+            onClick={() => handleViewClick()}
           >
             View
           </Button>
           <Button
             className="w-fit h-fit pl-0"
             variant={"link"}
-            onClick={() => handleEditClick(doc.id)}
+            onClick={() => handleEditClick()}
           >
             Edit
           </Button>
         </div>
+        {uploadProgressPercent && (
+          <div className="flex flex-col items-end min-w-[120px] w-full">
+            <div className="text-xs text-gray-500 mt-1">
+              {uploadProgressPercent}%
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-blue-500 h-2 rounded-full transition-all"
+                style={{ width: `${uploadProgressPercent}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

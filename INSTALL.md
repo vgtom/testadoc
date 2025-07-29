@@ -14,3 +14,9 @@ migrate the database
 
 4. wasp start
 start the app
+
+
+## PROCESS
+1. Start Minio
+2. wasp db start and then wasp db migrate-dev
+3. wasp start

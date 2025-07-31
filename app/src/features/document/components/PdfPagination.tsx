@@ -3,7 +3,7 @@ import React, { FC, useCallback, useEffect, useRef, useState } from "react";
 import { Document, PlacedAsset } from "wasp/entities";
 
 type PdfPaginationProps = {
-  doc: (Document & { placedAssets: PlacedAsset[] }) | null;
+  doc: (Document & { placedAssets?: PlacedAsset[] }) | null;
   fileUrl: string | null;
   handlePageClick: (pagenum: number) => void;
 };
@@ -26,22 +26,6 @@ const PdfPagination: FC<PdfPaginationProps> = ({
     },
     []
   );
-
-//   useEffect(() => {
-//     if (!containerRef.current) return;
-//     const updateWidth = () => {
-//       const containerWidth = containerRef.current?.offsetWidth;
-//       if (containerWidth) {
-//         const newWidth = containerWidth - 100;
-//         setWidth(newWidth);
-//         setPageHeight(newWidth * 1.414);
-//       }
-//     };
-//     updateWidth();
-//     const resizeObserver = new ResizeObserver(updateWidth);
-//     resizeObserver.observe(containerRef.current);
-//     return () => resizeObserver.disconnect();
-//   }, []);
 
   return (
     <div

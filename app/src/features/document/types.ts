@@ -1,3 +1,4 @@
+import { PDFDocument, PDFPage } from "pdf-lib";
 import {
   Contact,
   Document,
@@ -32,7 +33,7 @@ export interface PlacedObject {
   widthPercent: number;
   heightPercent: number;
   pageNumber: number;
-  roleId?: string;
+  recipientId: string;
   color?: string;
 }
 
@@ -43,3 +44,17 @@ export type CompleteTemplateObject = Template & {
   document: Document & { placedAssets: PlacedAsset[] };
   recipients: Recipient[];
 };
+
+export type CompleteDocument = Document & {
+  placedAssets: (PlacedAsset & {
+    recipient: Recipient | null | undefined;
+  })[];
+};
+
+export interface PageData {
+  id: string;
+  pageNumber: number;
+  originalPageNumber: number;
+  pdfDoc: PDFDocument;
+  sourceDocId?: string;
+}

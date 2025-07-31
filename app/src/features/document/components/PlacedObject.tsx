@@ -7,11 +7,15 @@ import { makeColorTransparent } from "../../../lib/utils";
 interface PlacedImageProps {
   placedAsset: PlacedObject;
   asset: Asset | undefined;
-  width: number;
+  pageWidth: number;
   pageHeight: number;
   isSelected: boolean;
   setSelectedObject: (id: string | null) => void;
-  updateObjectPosition: (id: string, xPercent: number, yPercent: number) => void;
+  updateObjectPosition: (
+    id: string,
+    xPercent: number,
+    yPercent: number
+  ) => void;
   onDelete?: (id: string) => void;
   onResize?: (id: string, widthPercent: number, heightPercent: number) => void;
   isReadOnly?: boolean;
@@ -20,7 +24,7 @@ interface PlacedImageProps {
 export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
   placedAsset,
   asset,
-  width,
+  pageWidth,
   pageHeight,
   isSelected,
   setSelectedObject,
@@ -31,7 +35,7 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const start = useRef({ x: 0, y: 0 });
-  const [left, setLeft] = useState(placedAsset.xPercent * width);
+  const [left, setLeft] = useState(placedAsset.xPercent * pageWidth);
   const [top, setTop] = useState(placedAsset.yPercent * pageHeight);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -39,7 +43,7 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
 
   // Store current dimensions in state for real-time updates
   const [currentWidth, setCurrentWidth] = useState(
-    placedAsset.widthPercent * width
+    placedAsset.widthPercent * pageWidth
   );
   const [currentHeight, setCurrentHeight] = useState(
     placedAsset.heightPercent * pageHeight
@@ -56,16 +60,16 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
   );
 
   useEffect(() => {
-    setLeft(placedAsset.xPercent * width);
+    setLeft(placedAsset.xPercent * pageWidth);
     setTop(placedAsset.yPercent * pageHeight);
-    setCurrentWidth(placedAsset.widthPercent * width);
+    setCurrentWidth(placedAsset.widthPercent * pageWidth);
     setCurrentHeight(placedAsset.heightPercent * pageHeight);
   }, [
     placedAsset.xPercent,
     placedAsset.yPercent,
     placedAsset.widthPercent,
     placedAsset.heightPercent,
-    width,
+    pageWidth,
     pageHeight,
   ]);
 
@@ -103,10 +107,7 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
 
         case "ArrowRight":
           e.preventDefault();
-          newLeft = Math.min(
-            parent.width - currentWidth,
-            left + moveDistance
-          );
+          newLeft = Math.min(parent.width - currentWidth, left + moveDistance);
           break;
 
         case "ArrowUp":
@@ -116,10 +117,7 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
 
         case "ArrowDown":
           e.preventDefault();
-          newTop = Math.min(
-            parent.height - currentHeight,
-            top + moveDistance
-          );
+          newTop = Math.min(parent.height - currentHeight, top + moveDistance);
           break;
 
         default:
@@ -129,7 +127,11 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
         setLeft(newLeft);
         setTop(newTop);
-        debouncedUpdate(placedAsset.id, newLeft / width, newTop / pageHeight);
+        debouncedUpdate(
+          placedAsset.id,
+          newLeft / pageWidth,
+          newTop / pageHeight
+        );
       }
     };
 
@@ -146,7 +148,7 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
     top,
     currentWidth,
     currentHeight,
-    width,
+    pageWidth,
     pageHeight,
     placedAsset.id,
     onDelete,
@@ -168,23 +170,19 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
 
     const handleMouseMove = (ev: MouseEvent) => {
       if (!element || !element.parentElement) return;
-
+      element.parentElement.style.backgroundColor = "black";
+      console.log(element.parentElement)
       const parent = element.parentElement.getBoundingClientRect();
+      
       let newLeft = ev.clientX - parent.left - start.current.x;
       let newTop = ev.clientY - parent.top - start.current.y;
 
-      newLeft = Math.max(
-        0,
-        Math.min(newLeft, parent.width - currentWidth)
-      );
-      newTop = Math.max(
-        0,
-        Math.min(newTop, parent.height - currentHeight)
-      );
+      newLeft = Math.max(0, Math.min(newLeft, parent.width - currentWidth));
+      newTop = Math.max(0, Math.min(newTop, parent.height - currentHeight));
 
       setLeft(newLeft);
       setTop(newTop);
-      debouncedUpdate(placedAsset.id, newLeft / width, newTop / pageHeight);
+      debouncedUpdate(placedAsset.id, newLeft / pageWidth, newTop / pageHeight);
     };
 
     const handleMouseUp = () => {
@@ -270,7 +268,7 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
       // Call resize callback with percentages
       debouncedResize(
         placedAsset.id,
-        newWidth / width,
+        newWidth / pageWidth,
         newHeight / pageHeight
       );
     };
@@ -348,10 +346,8 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
 
   if (!placedAsset || !asset) return null;
 
-  const objectWidth =
-    asset.type === EditType.IMAGE ? currentWidth : "20%";
-  const objectHeight =
-    asset.type === EditType.IMAGE ? currentHeight : "10%";
+  const objectWidth = asset.type === EditType.IMAGE ? currentWidth : "20%";
+  const objectHeight = asset.type === EditType.IMAGE ? currentHeight : "10%";
 
   return (
     <div

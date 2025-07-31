@@ -44,8 +44,12 @@ export const DocumentCard = ({
       return;
     }
     try {
-      createTemplate({ documentId: doc.id, name: "no name for now" }).then(() =>
-        toast("Create template successfully!")
+      createTemplate({ documentId: doc.id, name: "no name for now" }).then(
+        ({ id }) => {
+
+          toast("Create template successfully!");
+          navigate(`/template_editor/${id}`);
+        }
       );
     } catch (error) {
       toast("Failed to create template.");
@@ -80,13 +84,13 @@ export const DocumentCard = ({
           >
             View
           </Button>
-          <Button
+          {/* <Button
             className="w-fit h-fit pl-0"
             variant={"link"}
             onClick={() => handleEditClick()}
           >
             Edit
-          </Button>
+          </Button> */}
 
           <Button
             className="w-fit h-fit pl-0"

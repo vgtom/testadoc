@@ -180,7 +180,7 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
         widthPercent: placedObj.widthPercent,
         heightPercent: placedObj.heightPercent,
         documentId: template.documentId,
-        recipientId: placedObj.roleId as string,
+        recipientId: placedObj.recipientId as string,
       })),
     };
     console.log(dataToSave);

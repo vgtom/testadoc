@@ -2,10 +2,17 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Document as PdfDocument, Page } from "react-pdf";
 import DrawingPanel from "../components/DrawingPanel";
 import TemplateEditorToolbar from "../components/TemplateToolbar";
-import PdfPagination from "../components/PdfPagination";
-import { Asset, CompleteTemplateObject, EditType, PlacedObject } from "../types";
+import {
+  Asset,
+  CompleteTemplateObject,
+  EditType,
+  PageData,
+  PlacedObject,
+} from "../types";
 import { PlacedObjectComponent } from "../components/PlacedObject";
 import { Recipient } from "wasp/entities";
+import PdfEdittablePagination from "../components/PdfEdittablePagination";
+import toast from "react-hot-toast";
 
 type TemplateEditorProps = {
   template: CompleteTemplateObject | null;
@@ -30,9 +37,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const [placedObjects, setPlacedObjects] = useState<PlacedObject[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<number>(1);
+  const [pages, setPages] = useState<PageData[]>([]);
 
   useEffect(() => {
-    console.log("first color", template?.placedAssets[0]);
     if (template && template.placedAssets) {
       setAssets((prev) => [
         ...prev,
@@ -53,15 +60,11 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           heightPercent: i.heightPercent,
           pageNumber: i.pageNumber,
           color: i.recipient?.color || "transparent",
-          recipientId: i.recipientId!
+          recipientId: i.recipientId!,
         }))
       );
     }
   }, [template]);
-
-  useEffect(() => {
-    console.log(assets);
-  }, [assets]);
 
   useEffect(() => {
     const updateSize = () => {
@@ -70,10 +73,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       if (containerWidth) {
         const newWidth = containerWidth - 100;
         setWidth(newWidth);
-        setPageHeight(newWidth * 1.414);
+        setPageHeight(newWidth);
       }
     };
-
     updateSize();
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
@@ -119,13 +121,14 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       const rect = pageElement.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-
+      if (!activeRecipient?.id) {
+        toast.error("Recipient must be selected");
+        return;
+      }
       if (data.startsWith("asset:")) {
-        console.log(data);
         const assetId = data.replace("asset:", "");
         const asset = assets.find((a) => a.id === assetId);
         if (!asset) return;
-
         const initialWidth = 200;
         const initialHeight = 150;
         const newImage: PlacedObject = {
@@ -138,7 +141,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           heightPercent: pixelsToPercent(initialHeight, pageHeight),
           pageNumber,
           color: activeRecipient?.color || "transparent",
-          roleId: activeRecipient?.id
+          recipientId: activeRecipient?.id,
         };
         setPlacedObjects((prev) => [...prev, newImage]);
         setSelectedImage(newImage.id);
@@ -146,7 +149,6 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         const imageId = data.replace("image:", "");
         const imageIndex = placedObjects.findIndex((img) => img.id === imageId);
         if (imageIndex === -1) return;
-
         setPlacedObjects((prev) => {
           const newImages = [...prev];
           newImages[imageIndex] = {
@@ -167,14 +169,21 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
     setPlacedObjects((prev) => prev.filter((i) => i.id !== assetId));
 
   const handlePageClick = (pagenum: number) => setActivePage(pagenum);
-  if (!template?.document) return;
+
+  if (!template?.document) return null;
   return (
     <div className="flex h-[calc(100vh-6rem)] bg-gray-50">
-      <PdfPagination
+      {/* Pagination now contains all the reorder logic */}
+      <PdfEdittablePagination
         doc={template?.document}
         fileUrl={fileUrl}
         handlePageClick={handlePageClick}
+        pages={pages}
+        setPages={setPages}
+        placedObjects={placedObjects}
+        setPlacedObjects={setPlacedObjects}
       />
+
       <div className="flex-1 p-6 overflow-auto ">
         <div className="max-w-4xl mx-auto">
           {loading && (
@@ -197,7 +206,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
           <div
             ref={containerRef}
-            className="bg-white rounded-lg shadow-lg p-6 relative"
+            className="bg-white rounded-lg shadow-lg p-6 relative "
           >
             {template && (
               <PdfDocument
@@ -208,7 +217,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               >
                 <div
                   key={`page_${activePage}`}
-                  className={`relative mb-8 last:mb-0 cursor-pointer`}
+                  className={`relative mb-8 last:mb-0 cursor-pointer w-fit`}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, activePage)}
                 >
@@ -218,7 +227,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                       width={width}
                       renderTextLayer={false}
                       renderAnnotationLayer={false}
-                      className="pdf-page"
+                      className="pdf-page w-fit m-auto"
                     />
                     <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm">
                       Page {activePage}
@@ -229,14 +238,15 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                         <PlacedObjectComponent
                           key={placedAsset.id}
                           placedAsset={placedAsset}
-                          asset={assets.find((a) => a.id === placedAsset.assetId)}
-                          width={width}
+                          asset={assets.find(
+                            (a) => a.id === placedAsset.assetId
+                          )}
+                          pageWidth={width}
                           pageHeight={pageHeight}
                           isSelected={selectedImage === placedAsset.id}
                           setSelectedObject={setSelectedImage}
                           updateObjectPosition={updateImagePosition}
                           onDelete={handleDeleteAsset}
-
                         />
                       ))}
                   </div>

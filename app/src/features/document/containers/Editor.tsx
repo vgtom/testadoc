@@ -2,13 +2,15 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Document as PdfDocument, Page } from "react-pdf";
 import DrawingPanel from "../components/DrawingPanel";
 import DocumentEditorToolbar from "../components/EditorToolbar";
-import { Document, PlacedAsset } from "wasp/entities";
+import { Document, PlacedAsset, Recipient } from "wasp/entities";
 import PdfPagination from "../components/PdfPagination";
-import { Asset, EditType, PlacedObject } from "../types";
+import { Asset, CompleteDocument, EditType, PlacedObject } from "../types";
 import { PlacedObjectComponent } from "../components/PlacedObject";
 
 type DocumentEditorProps = {
-  doc: (Document & { placedAssets: PlacedAsset[] }) | null;
+  doc:
+    | CompleteDocument
+    | null;
   fileUrl: string | null;
 };
 
@@ -41,7 +43,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         })),
       ]);
       setPlacedObjects(
-        doc.placedAssets.map((i) => ({
+        doc.placedAssets.filter(i => i.recipientId).map((i) => ({
           id: i.id,
           type: i.type as EditType,
           assetId: i.id,
@@ -50,6 +52,8 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
           widthPercent: i.widthPercent,
           heightPercent: i.heightPercent,
           pageNumber: i.pageNumber,
+          recipientId: i.recipientId!,
+          color: i.recipient?.color || "transparent",
         }))
       );
     }
@@ -133,6 +137,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
           widthPercent: pixelsToPercent(initialWidth, width),
           heightPercent: pixelsToPercent(initialHeight, pageHeight),
           pageNumber,
+          recipientId: ""
         };
         setPlacedObjects((prev) => [...prev, newImage]);
         setSelectedImage(newImage.id);
@@ -224,7 +229,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
                           key={image.id}
                           placedAsset={image}
                           asset={assets.find((a) => a.id === image.id)}
-                          width={width}
+                          pageWidth={width}
                           pageHeight={pageHeight}
                           isSelected={selectedImage === image.id}
                           setSelectedObject={setSelectedImage}

@@ -284,6 +284,11 @@ action createDocument {
   entities: [User, Document]
 }
 
+action updateDocument {
+  fn: import { updateDocument } from "@src/features/document/operations",
+  entities: [User, Document]
+}
+
 action createPlacedAssetsByDocumentId {
   fn: import { createPlacedAssetsByDocumentId } from "@src/features/document/operations",
   entities: [User, Document, PlacedAsset]

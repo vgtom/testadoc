@@ -9,7 +9,11 @@ import type {
   GetRecipientsByTemplateId,
 } from "wasp/server/operations";
 import type { Document, PlacedAsset, Recipient, Template } from "wasp/entities";
-import { RecipientWithContact, CompleteTemplateObject } from "./types";
+import {
+  RecipientWithContact,
+  CompleteTemplateObject,
+  CompleteDocument,
+} from "./types";
 
 export const getAllDocuments: GetAllDocuments<void, Document[]> = async (
   _args,
@@ -26,12 +30,18 @@ export const getAllDocuments: GetAllDocuments<void, Document[]> = async (
 
 export const getDocumentById: GetDocumentById<
   { id: string | undefined },
-  (Document & { placedAssets: PlacedAsset[] }) | null
+  CompleteDocument | null
 > = async (args, context) => {
   if (!context.user) throw new HttpError(401);
   const doc = await context.entities.Document.findFirst({
     where: { id: args.id, userId: context.user.id },
-    include: { placedAssets: true },
+    include: {
+      placedAssets: {
+        include: {
+          recipient: true,
+        },
+      },
+    },
   });
   if (!doc) throw new HttpError(404, "Document not found");
   return doc;
@@ -110,7 +120,7 @@ export const getRecipientsByTemplateId: GetRecipientsByTemplateId<
 > = async ({ templateId }, context) => {
   if (!context.user) throw new HttpError(401, "Unauthorized");
   if (!templateId) throw new HttpError(400, "Template ID is required");
-  
+
   const template = await context.entities.Template.findFirst({
     where: {
       id: templateId,

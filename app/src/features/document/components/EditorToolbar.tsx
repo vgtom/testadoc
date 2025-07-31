@@ -120,6 +120,7 @@ const DocumentEditorToolbar: FC<DocumentEditorToolbarProps> = ({
     if (doc)
       createPlacedAssetsByDocumentId({
         documentId: doc.id,
+        
         placedAssets: placedImages.map((placedObj) => ({
           pageNumber: placedObj.pageNumber,
           type: placedObj.type,
@@ -129,6 +130,7 @@ const DocumentEditorToolbar: FC<DocumentEditorToolbarProps> = ({
           widthPercent: placedObj.widthPercent,
           heightPercent: placedObj.heightPercent,
           documentId: doc.id,
+
         })),
       });
   }, [doc, placedImages, assets, fileUrl]);

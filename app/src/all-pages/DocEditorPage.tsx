@@ -5,8 +5,9 @@ import { getDownloadDocumentSignedURLByDocId } from "wasp/client/operations";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
 import withProtectedLayout from "../client/HOC/withProtectedLayout";
 import { getDocumentById } from "wasp/client/operations";
-import { Document, PlacedAsset,  } from "wasp/entities";
+import { Document, PlacedAsset } from "wasp/entities";
 import { DocumentEditor } from "../features/document/containers/Editor";
+import { CompleteDocument } from "../features/document/types";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -15,7 +16,7 @@ const DocumentPreviewPage = () => {
   const { documentId } = useParams();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
-  const [doc, setDoc] = useState<Document & { placedAssets: PlacedAsset[] } | null>(null)
+  const [doc, setDoc] = useState<CompleteDocument | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
   const [width, setWidth] = useState<number>(800); // Default width
   const [loading, setLoading] = useState(true);
@@ -28,9 +29,13 @@ const DocumentPreviewPage = () => {
       setError(null);
       try {
         if (!documentId) throw new Error("Document ID is missing");
-        const url = await getDownloadDocumentSignedURLByDocId({ id: documentId });
+        const url = await getDownloadDocumentSignedURLByDocId({
+          id: documentId,
+        });
         setFileUrl(url);
-        getDocumentById({id: documentId}).then(res => setDoc(res))
+        getDocumentById({ id: documentId }).then((res) =>
+          setDoc(res as CompleteDocument)
+        );
       } catch (err: any) {
         setError(err.message || "Failed to load PDF URL");
       } finally {
@@ -61,7 +66,7 @@ const DocumentPreviewPage = () => {
   };
 
   return (
-    <div >
+    <div>
       <DocumentEditor fileUrl={fileUrl} doc={doc} />
     </div>
   );

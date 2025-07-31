@@ -1,4 +1,4 @@
-import { createDocument, createTemplate } from "wasp/client/operations";
+import { createDocument, createTemplate, updateDocument } from "wasp/client/operations";
 import axios from "axios";
 import { MAX_FILE_SIZE_BYTES } from "./validation";
 
@@ -68,4 +68,44 @@ function validatePDFFile(file: File): FileUploadError | null {
     };
   }
   return null;
+}
+
+interface UpdateDocumentProgress {
+  documentId: string;
+  file: File;
+  setUploadProgressPercent: (percent: number) => void;
+}
+
+export async function updateDocumentWithProgress({
+  documentId,
+  file,
+  setUploadProgressPercent,
+}: UpdateDocumentProgress) {
+  // Validate file (reuse your existing validation)
+  const validation = validatePDFFile(file);
+  if (validation) throw validation;
+
+  // Get signed URL for upload
+  const { s3UploadUrl, s3UploadFields, doc } = await updateDocument({
+    documentId,
+    fileName: file.name,
+    fileType: file.type,
+  });
+
+  // Create form data for S3 upload
+  const formData = getUploadFormData(file, s3UploadFields);
+
+  // Upload to S3 with progress tracking
+  await axios.post(s3UploadUrl, formData, {
+    onUploadProgress: (progressEvent) => {
+      if (progressEvent.total) {
+        const percent = Math.round(
+          (progressEvent.loaded / progressEvent.total) * 100
+        );
+        setUploadProgressPercent(percent);
+      }
+    },
+  });
+
+  return { doc };
 }

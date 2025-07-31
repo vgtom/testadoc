@@ -3,6 +3,7 @@ import {
   useQuery,
   getAllDocuments,
   getDownloadDocumentSignedURL,
+  getAllTemplates,
 } from "wasp/client/operations";
 import {
   uploadDocumentWithProgress,
@@ -12,19 +13,20 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { cn } from "../../../lib/utils";
 import { useDrop } from "react-dnd";
-import { type Document } from "wasp/entities";
+import { Template, type Document } from "wasp/entities";
 import { DocumentCard } from "../components/DocListCard";
+import { TemplateListCard } from "../components/TemltListCard";
 
 // DnD item type for file
 const FILE = "FILE";
 
-export default function DocumentsContainer() {
+export default function TemplatesContainer() {
   const {
-    data: documents,
+    data: templates,
     isLoading,
     error,
     refetch,
-  } = useQuery(getAllDocuments);
+  } = useQuery(getAllTemplates);
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploadProgressPercent, setUploadProgressPercent] = useState<number>(0);
   const [uploadError, setUploadError] = useState<FileUploadError | null>(null);
@@ -67,7 +69,7 @@ export default function DocumentsContainer() {
         file,
         userId: "",
         setUploadProgressPercent,
-        makeTemplate: false
+        makeTemplate: true
       });
       refetch();
       setUploadingFile(null);
@@ -98,7 +100,7 @@ export default function DocumentsContainer() {
     );
 
   // No documents: show upload button and optional uploading state, not centered
-  if (!documents || documents.length === 0) {
+  if (!templates || templates.length === 0) {
     return (
       <div
         ref={drop}
@@ -175,7 +177,7 @@ export default function DocumentsContainer() {
       onDragOver={(e) => e.preventDefault()}
     >
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">Uploaded Documents</h2>
+        <h2 className="text-xl font-bold">My Templates</h2>
         <div className="flex gap-2 items-center">
           <Button
             onClick={handleUploadClick}
@@ -225,8 +227,8 @@ export default function DocumentsContainer() {
             uploadProgressPercent={uploadProgressPercent}
           />
         )}
-        {documents.map((doc: Document) => (
-          <DocumentCard doc={doc} key={doc.id} />
+        {templates.map((template: Template) => (
+          <TemplateListCard template={template} key={template.id} />
         ))}
       </div>
     </div>

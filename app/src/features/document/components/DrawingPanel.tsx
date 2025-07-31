@@ -1,7 +1,7 @@
 import React, { FC, useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../../../components/ui/button";
 import { Circle, Pencil, Save, Square } from "lucide-react";
-import { Asset, EditType } from "../containers/Editor";
+import { Asset, EditType } from "../types";
 
 type DrawingPanelProp = {
   setAssets: React.Dispatch<React.SetStateAction<Asset[]>>;

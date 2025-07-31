@@ -1,10 +1,11 @@
 import { Circle, Download, Pencil, Save, Square, Trash2 } from "lucide-react";
 import React, { FC, useCallback } from "react";
 import { Button } from "../../../components/ui/button";
-import { Asset, PlacedObject } from "../containers/Editor";
 import { PDFDocument } from "pdf-lib";
-import { createEditsByDocumentId } from "wasp/client/operations";
 import { Document } from "wasp/entities";
+import { Asset, PlacedObject } from "../types";
+import { toast } from "sonner";
+import { createPlacedAssetsByDocumentId } from "wasp/client/operations";
 
 type DocumentEditorToolbarProps = {
   setShowDrawingPanel: React.Dispatch<React.SetStateAction<boolean>>;
@@ -59,10 +60,10 @@ const DocumentEditorToolbar: FC<DocumentEditorToolbarProps> = ({
       link.download = `edited-document-${Date.now()}.json`;
       link.click();
       URL.revokeObjectURL(url);
-      alert("Document exported as JSON!");
+      toast("Document exported as JSON!");
     } catch (error) {
       console.error("Export error:", error);
-      alert("Error exporting document as JSON");
+      toast("Error exporting document as JSON");
     }
   }, [fileUrl, assets, placedImages]);
 
@@ -98,7 +99,7 @@ const DocumentEditorToolbar: FC<DocumentEditorToolbarProps> = ({
         }
       }
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes as Uint8Array], {
+      const blob = new Blob([pdfBytes as Uint8Array<ArrayBuffer>], {
         type: "application/pdf",
       });
 
@@ -108,26 +109,28 @@ const DocumentEditorToolbar: FC<DocumentEditorToolbarProps> = ({
       link.download = `edited-document-${Date.now()}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
-      alert("Document exported as PDF!");
+      toast("Document exported as PDF!");
     } catch (error) {
       console.error("Export error:", error);
-      alert("Error exporting document as PDF");
+      toast("Error exporting document as PDF");
     }
   }, [placedImages, assets, fileUrl]);
 
   const saveToDB = useCallback(async () => {
     if (doc)
-      createEditsByDocumentId({
+      createPlacedAssetsByDocumentId({
         documentId: doc.id,
-        edits: placedImages.map((placedObj) => ({
-            pageNumber: placedObj.pageNumber,
-            type: placedObj.type,
-            value: assets.find(i => i.id === placedObj.assetId )?.dataUrl || "",
-            xPercent: placedObj.xPercent,
-            yPercent: placedObj.yPercent,
-            widthPercent: placedObj.widthPercent,
-            heightPercent: placedObj.heightPercent,
-            documentId: doc.id,
+        
+        placedAssets: placedImages.map((placedObj) => ({
+          pageNumber: placedObj.pageNumber,
+          type: placedObj.type,
+          value: assets.find((i) => i.id === placedObj.assetId)?.dataUrl || "",
+          xPercent: placedObj.xPercent,
+          yPercent: placedObj.yPercent,
+          widthPercent: placedObj.widthPercent,
+          heightPercent: placedObj.heightPercent,
+          documentId: doc.id,
+
         })),
       });
   }, [doc, placedImages, assets, fileUrl]);
@@ -149,7 +152,7 @@ const DocumentEditorToolbar: FC<DocumentEditorToolbarProps> = ({
           Assets ({assets.length})
         </h3>
         <div className="space-y-2">
-          {assets.map((asset) => (
+          {assets.filter(i => !i.type.includes("TEMPLATE")).map((asset) => (
             <div
               key={asset.id}
               className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg cursor-move"

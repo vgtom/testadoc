@@ -1,3 +1,11 @@
+import {
+  Contact,
+  Document,
+  PlacedAsset,
+  Recipient,
+  Template,
+} from "wasp/entities";
+
 export interface Asset {
   id: string;
   dataUrl: string;
@@ -27,3 +35,11 @@ export interface PlacedObject {
   roleId?: string;
   color?: string;
 }
+
+export type RecipientWithContact = Recipient & { contact: Contact };
+
+export type CompleteTemplateObject = Template & {
+  placedAssets: (PlacedAsset & { recipient: Recipient | null })[];
+  document: Document & { placedAssets: PlacedAsset[] };
+  recipients: Recipient[];
+};

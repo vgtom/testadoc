@@ -263,34 +263,35 @@ query getTemplateById {
   entities: [User, Template]
 }
 
-query getEditsByTemplateId {
-  fn: import { getEditsByTemplateId } from "@src/features/document/queries",
-  entities: [User, Template]
+query getRecipientsByTemplateId {
+  fn: import { getRecipientsByTemplateId } from "@src/features/document/queries",
+  entities: [Template, Recipient]
 }
 
-query getSignRolesByTemplateId {
-  fn: import { getSignRolesByTemplateId } from "@src/features/document/queries",
-  entities: [Template, SignRole]
+query getPlacedAssetsByDocumentId {
+  fn: import { getPlacedAssetsByDocumentId } from "@src/features/document/queries",
+  entities: [User, Document, PlacedAsset]
 }
 
-query getEditsByDocumentId {
-  fn: import { getEditsByDocumentId } from "@src/features/document/queries",
-  entities: [User, Document, DocumentEdit]
+query getPlacedAssetsByTemplateId {
+  fn: import { getPlacedAssetsByTemplateId } from "@src/features/document/queries",
+  entities: [User, Template, PlacedAsset]
 }
+
 
 action createDocument {
   fn: import { createDocument } from "@src/features/document/operations",
   entities: [User, Document]
 }
 
-action createEditsByDocumentId {
-  fn: import { createEditsByDocumentId } from "@src/features/document/operations",
-  entities: [User, Document, DocumentEdit]
+action createPlacedAssetsByDocumentId {
+  fn: import { createPlacedAssetsByDocumentId } from "@src/features/document/operations",
+  entities: [User, Document, PlacedAsset]
 }
 
-action createEditsByTemplateId {
-  fn: import { createEditsByTemplateId } from "@src/features/document/operations",
-  entities: [User, Template, DocumentEdit]
+action createPlacedAssetsByTemplateId {
+  fn: import { createPlacedAssetsByTemplateId } from "@src/features/document/operations",
+  entities: [User, Template, PlacedAsset]
 }
 
 action createTemplate {
@@ -298,9 +299,9 @@ action createTemplate {
   entities: [User, Template]
 }
 
-action createSignRole {
-  fn: import { createSignRole } from "@src/features/document/operations",
-  entities: [User, Template, Contact, SignRole],
+action createRecipient {
+  fn: import { createRecipient } from "@src/features/document/operations",
+  entities: [User, Template, Contact, Recipient],
   auth: true
 }
 
@@ -318,6 +319,7 @@ query getDownloadDocumentSignedURLByDocId {
   fn: import { getDownloadDocumentSignedURLByDocId } from "@src/features/document/operations",
   entities: [User, Document]
 }
+
 //#endregion
 
 //#region Analytics

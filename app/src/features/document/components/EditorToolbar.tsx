@@ -2,10 +2,10 @@ import { Circle, Download, Pencil, Save, Square, Trash2 } from "lucide-react";
 import React, { FC, useCallback } from "react";
 import { Button } from "../../../components/ui/button";
 import { PDFDocument } from "pdf-lib";
-import { createEditsByDocumentId } from "wasp/client/operations";
 import { Document } from "wasp/entities";
 import { Asset, PlacedObject } from "../types";
 import { toast } from "sonner";
+import { createPlacedAssetsByDocumentId } from "wasp/client/operations";
 
 type DocumentEditorToolbarProps = {
   setShowDrawingPanel: React.Dispatch<React.SetStateAction<boolean>>;
@@ -118,9 +118,9 @@ const DocumentEditorToolbar: FC<DocumentEditorToolbarProps> = ({
 
   const saveToDB = useCallback(async () => {
     if (doc)
-      createEditsByDocumentId({
+      createPlacedAssetsByDocumentId({
         documentId: doc.id,
-        edits: placedImages.map((placedObj) => ({
+        placedAssets: placedImages.map((placedObj) => ({
           pageNumber: placedObj.pageNumber,
           type: placedObj.type,
           value: assets.find((i) => i.id === placedObj.assetId)?.dataUrl || "",

@@ -5,7 +5,7 @@ import { getDownloadDocumentSignedURLByDocId } from "wasp/client/operations";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
 import withProtectedLayout from "../client/HOC/withProtectedLayout";
 import { getDocumentById } from "wasp/client/operations";
-import { Document, DocumentEdit } from "wasp/entities";
+import { Document, PlacedAsset,  } from "wasp/entities";
 import { DocumentEditor } from "../features/document/containers/Editor";
 
 // Configure PDF.js worker
@@ -15,7 +15,7 @@ const DocumentPreviewPage = () => {
   const { documentId } = useParams();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
-  const [doc, setDoc] = useState<Document & { edits: DocumentEdit[] } | null>(null)
+  const [doc, setDoc] = useState<Document & { placedAssets: PlacedAsset[] } | null>(null)
   const [numPages, setNumPages] = useState<number | null>(null);
   const [width, setWidth] = useState<number>(800); // Default width
   const [loading, setLoading] = useState(true);

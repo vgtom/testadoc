@@ -1,9 +1,9 @@
 import { Document as PdfDocument, Page } from "react-pdf";
 import React, { FC, useCallback, useEffect, useRef, useState } from "react";
-import { Document, DocumentEdit } from "wasp/entities";
+import { Document, PlacedAsset } from "wasp/entities";
 
 type PdfPaginationProps = {
-  doc: (Document & { edits: DocumentEdit[] }) | null;
+  doc: (Document & { placedAssets: PlacedAsset[] }) | null;
   fileUrl: string | null;
   handlePageClick: (pagenum: number) => void;
 };

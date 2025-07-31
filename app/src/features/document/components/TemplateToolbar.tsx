@@ -10,16 +10,15 @@ import React, { FC, useCallback, useEffect, useState } from "react";
 import { Button } from "../../../components/ui/button";
 import { PDFDocument } from "pdf-lib";
 import {
-  createEditsByTemplateId,
-  getSignRolesByTemplateId,
+  createPlacedAssetsByTemplateId,
+  getRecipientsByTemplateId,
   useQuery,
 } from "wasp/client/operations";
-import { CompleteTemplateObject } from "../queries";
-import RoleFormDialog from "./RoleForm";
+import RoleFormDialog from "./RecipientForm";
 import { cn } from "../../../client/cn";
-import { Asset, EditType, PlacedObject } from "../types";
-import { SignRole } from "wasp/entities";
-import { toast } from "sonner";
+import { Asset, CompleteTemplateObject, EditType, PlacedObject } from "../types";
+import { toast, Toaster } from "sonner";
+import { Recipient } from "wasp/entities";
 
 const templateAssetTools: Asset[] = [
   {
@@ -50,8 +49,8 @@ type DocTemplateEditorToolbarProp = {
   setPlacedImages: React.Dispatch<React.SetStateAction<PlacedObject[]>>;
   fileUrl: string | null;
   template: CompleteTemplateObject | null;
-  setActiveRole: React.Dispatch<React.SetStateAction<SignRole | undefined>>;
-  activeRole: SignRole | undefined;
+  setActiveRole: React.Dispatch<React.SetStateAction<Recipient | undefined>>;
+  activeRole: Recipient | undefined;
 };
 
 const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
@@ -67,15 +66,15 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
 }) => {
   const [showSignRoleForm, setShowSignRoleForm] = useState(false);
 
-  const { data: signRoles } = useQuery(getSignRolesByTemplateId, {
+  const { data: recipients } = useQuery(getRecipientsByTemplateId, {
     templateId: template?.id,
   });
 
   useEffect(() => {
-    if (!signRoles?.[0]?.id) return;
-    setActiveRole(signRoles?.[0]);
+    if (!recipients?.[0]?.id) return;
+    setActiveRole(recipients?.[0]);
     // setActiveRoleColor(getRoleColor(0))
-  }, [signRoles]);
+  }, [recipients]);
 
   useEffect(() => {
     setAssets((prev) => [...prev, ...templateAssetTools]);
@@ -164,27 +163,30 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
   }, [placedImages, assets, fileUrl]);
 
   const saveToDB = useCallback(async () => {
-    if (template) {
-      const dataToSave = {
-        documentId: template.documentId,
-        templateId: template.id,
-        edits: placedImages.map((placedObj) => ({
-          pageNumber: placedObj.pageNumber,
-          type: placedObj.type,
-          value: assets.find((i) => i.id === placedObj.assetId)?.dataUrl || "",
-          xPercent: placedObj.xPercent,
-          yPercent: placedObj.yPercent,
-          widthPercent: placedObj.widthPercent,
-          heightPercent: placedObj.heightPercent,
-          documentId: template.documentId,
-          roleId: placedObj.roleId as string,
-        })),
-      };
-      console.log(dataToSave);
-      createEditsByTemplateId(dataToSave)
-        .then(() => toast.success("Saved successfully!"))
-        .catch((err) => toast(err));
+    if (!template?.documentId) {
+      toast.error("Template and document required")
+      return;
     }
+
+    const dataToSave = {
+      documentId: template.documentId,
+      templateId: template.id,
+      placedAssets: placedImages.map((placedObj) => ({
+        pageNumber: placedObj.pageNumber,
+        type: placedObj.type,
+        value: assets.find((i) => i.id === placedObj.assetId)?.dataUrl || "",
+        xPercent: placedObj.xPercent,
+        yPercent: placedObj.yPercent,
+        widthPercent: placedObj.widthPercent,
+        heightPercent: placedObj.heightPercent,
+        documentId: template.documentId,
+        recipientId: placedObj.roleId as string,
+      })),
+    };
+    console.log(dataToSave);
+    createPlacedAssetsByTemplateId(dataToSave)
+      .then(() => toast.success("Saved successfully!"))
+      .catch((err) => toast(err));
   }, [template, placedImages, assets, fileUrl]);
 
   return (
@@ -197,20 +199,20 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
       <div className="w-64 bg-white shadow-lg p-4 border-r overflow-y-auto grid grid-rows-[1fr_min-content]">
         <div className="mb-6 ">
           <div className="space-y-2 py-2">
-            {signRoles?.map((role, index) => (
+            {recipients?.map((recipient, index) => (
               <div
-                key={role.id}
+                key={recipient.id}
                 onClick={() => {
-                  setActiveRole(role);
+                  setActiveRole(recipient);
                   // setActiveRoleColor(getRoleColor(index));
                 }}
-                style={{ backgroundColor: role.color || "transparent" }}
+                style={{ backgroundColor: recipient.color || "transparent" }}
                 className={cn(
                   "p-2 bg-gray-100 text-sm text-gray-700 border-2 border-transparent rounded-lg cursor-pointer",
-                  activeRole?.id === role.id ? "border-black" : ""
+                  activeRole?.id === recipient.id ? "border-black" : ""
                 )}
               >
-                {role.name}
+                {recipient.contact.email}
               </div>
             ))}
             <Button
@@ -218,7 +220,7 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
               variant={"outline"}
               className="w-full"
             >
-              + Add Sign Role
+              + Add Recipient
             </Button>
           </div>
           <hr />

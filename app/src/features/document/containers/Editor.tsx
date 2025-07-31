@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Document as PdfDocument, Page } from "react-pdf";
 import DrawingPanel from "../components/DrawingPanel";
 import DocumentEditorToolbar from "../components/EditorToolbar";
-import { Document, DocumentEdit } from "wasp/entities";
+import { Document, PlacedAsset } from "wasp/entities";
 import PdfPagination from "../components/PdfPagination";
 import { Asset, EditType, PlacedObject } from "../types";
 import { PlacedObjectComponent } from "../components/PlacedObject";
 
 type DocumentEditorProps = {
-  doc: (Document & { edits: DocumentEdit[] }) | null;
+  doc: (Document & { placedAssets: PlacedAsset[] }) | null;
   fileUrl: string | null;
 };
 
@@ -31,17 +31,17 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   const [activePage, setActivePage] = useState<number>(1);
 
   useEffect(() => {
-    if (doc && doc.edits) {
+    if (doc && doc.placedAssets) {
       setAssets((prev) => [
         ...prev,
-        ...doc.edits.map((i) => ({
+        ...doc.placedAssets.map((i) => ({
           id: i.id,
           dataUrl: i.value,
           type: i.type as EditType,
         })),
       ]);
       setPlacedObjects(
-        doc.edits.map((i) => ({
+        doc.placedAssets.map((i) => ({
           id: i.id,
           type: i.type as EditType,
           assetId: i.id,

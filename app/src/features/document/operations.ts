@@ -1,6 +1,6 @@
 import * as z from "zod";
 import { HttpError } from "wasp/server";
-import { DocumentEdit, SignRole, Template, type Document } from "wasp/entities";
+import { Recipient, Template, type Document } from "wasp/entities";
 import {
   getDownloadFileSignedURLFromS3,
   getUploadFileSignedURLFromS3,
@@ -9,15 +9,12 @@ import { ensureArgsSchemaOrThrowHttpError } from "../../server/validation";
 import type {
   CreateDocument,
   GetDownloadDocumentSignedURL,
-  GetDocumentById,
   GetDownloadDocumentSignedURLByDocId,
-  GetEditsByDocumentId,
-  GetEditsByTemplateId,
-  CreateEditsByTemplateId,
+  GetPlacedAssetsByDocumentId,
+  CreatePlacedAssetsByTemplateId,
   CreateTemplate,
-  CreateSignRole,
+  CreateRecipient,
 } from "wasp/server/operations";
-import { ArrowRightSquare, Edit } from "lucide-react";
 
 const createDocumentInputSchema = z.object({
   fileName: z.string().nonempty(),
@@ -34,16 +31,13 @@ export const createDocument: CreateDocument<
     doc: Document;
   }
 > = async (rawArgs, context) => {
-  if (!context.user) {
-    throw new HttpError(401);
-  }
+  if (!context.user) throw new HttpError(401);
 
   const { fileType, fileName } = ensureArgsSchemaOrThrowHttpError(
     createDocumentInputSchema,
     rawArgs
   );
 
-  // Only allow PDF
   if (fileType !== "application/pdf") {
     throw new HttpError(400, "Only PDF files are allowed");
   }
@@ -65,22 +59,14 @@ export const createDocument: CreateDocument<
     },
   });
 
-  return {
-    s3UploadUrl,
-    s3UploadFields,
-    doc,
-  };
-
-  // Optionally, you could return s3UploadUrl and s3UploadFields for direct upload from client
+  return { s3UploadUrl, s3UploadFields, doc };
 };
 
 export const getAllDocuments = async (
   _args: void,
   context: any
 ): Promise<Document[]> => {
-  if (!context.user) {
-    throw new HttpError(401);
-  }
+  if (!context.user) throw new HttpError(401);
   return context.entities.Document.findMany({
     where: { user: { id: context.user.id } },
     orderBy: { createdAt: "desc" },
@@ -91,54 +77,39 @@ const getDownloadFileSignedURLInputSchema = z.object({
   key: z.string().nonempty(),
 });
 
-type GetDownloadFileSignedURLInput = z.infer<
-  typeof getDownloadFileSignedURLInputSchema
->;
-
 export const getDownloadDocumentSignedURL: GetDownloadDocumentSignedURL<
-  GetDownloadFileSignedURLInput,
+  z.infer<typeof getDownloadFileSignedURLInputSchema>,
   string
 > = async (rawArgs, context) => {
-  if (!context.user) {
-    throw new HttpError(401);
-  }
+  if (!context.user) throw new HttpError(401);
   const { key } = ensureArgsSchemaOrThrowHttpError(
     getDownloadFileSignedURLInputSchema,
     rawArgs
   );
-  // Ensure the document belongs to the current user
+
   const doc = await context.entities.Document.findFirst({
     where: { key, userId: context.user.id },
   });
-  if (!doc) {
+
+  if (!doc)
     throw new HttpError(403, "You do not have access to this document.");
-  }
   return await getDownloadFileSignedURLFromS3({ key });
 };
 
-const getDownloadFileSignedURLByIdInputSchema = z.object({
-  id: z.string().nonempty(),
-});
-
-type GetDownloadFileSignedURLByIdInput = z.infer<
-  typeof getDownloadFileSignedURLByIdInputSchema
->;
-
 export const getDownloadDocumentSignedURLByDocId: GetDownloadDocumentSignedURLByDocId<
-  GetDownloadFileSignedURLByIdInput,
+  { id: string },
   string
-> = async (rawArgs, context) => {
+> = async ({ id }, context) => {
   if (!context.user) throw new HttpError(401);
-  const { id } = rawArgs; // id is string
   const doc = await context.entities.Document.findFirst({
-    where: { id: id, userId: context.user.id },
+    where: { id, userId: context.user.id },
   });
   if (!doc) throw new HttpError(404, "Document not found");
   return await getDownloadFileSignedURLFromS3({ key: doc.key });
 };
 
-export const createEditsByDocumentIdInputSchema = z.object({
-  edits: z.array(
+const createPlacedAssetsByDocumentIdInputSchema = z.object({
+  placedAssets: z.array(
     z.object({
       type: z.enum([
         "TEXT",
@@ -159,12 +130,8 @@ export const createEditsByDocumentIdInputSchema = z.object({
   documentId: z.string().uuid(),
 });
 
-type CreateEditsByDocumentIdInputSchema = z.infer<
-  typeof createEditsByDocumentIdInputSchema
->;
-
-export const createEditsByDocumentId: GetEditsByDocumentId<
-  CreateEditsByDocumentIdInputSchema,
+export const createPlacedAssetsByDocumentId: GetPlacedAssetsByDocumentId<
+  z.infer<typeof createPlacedAssetsByDocumentIdInputSchema>,
   Document | null
 > = async (args, context) => {
   if (!context.user) throw new HttpError(401);
@@ -175,24 +142,22 @@ export const createEditsByDocumentId: GetEditsByDocumentId<
 
   if (!doc) throw new HttpError(404, "Document not found");
 
-  await context.entities.DocumentEdit.deleteMany({
+  await context.entities.PlacedAsset.deleteMany({
     where: { documentId: args.documentId },
   });
 
-  const editsWithDocumentId = args.edits.map((edit) => ({
-    ...edit,
-    documentId: args.documentId,
-  }));
-
-  await context.entities.DocumentEdit.createMany({
-    data: editsWithDocumentId,
+  await context.entities.PlacedAsset.createMany({
+    data: args.placedAssets.map((asset) => ({
+      ...asset,
+      documentId: args.documentId,
+    })),
   });
 
   return doc;
 };
 
-export const createEditsByTemplateIdInputSchema = z.object({
-  edits: z.array(
+const createPlacedAssetsByTemplateIdInputSchema = z.object({
+  placedAssets: z.array(
     z.object({
       type: z.enum([
         "TEXT",
@@ -208,20 +173,15 @@ export const createEditsByTemplateIdInputSchema = z.object({
       yPercent: z.number().min(0).max(1),
       widthPercent: z.number().min(0).max(1),
       heightPercent: z.number().min(0).max(1),
-      roleId: z.string().uuid(),
+      recipientId: z.string().uuid(),
     })
   ),
   documentId: z.string().uuid(),
   templateId: z.string().uuid(),
 });
 
-
-export type CreateEditsByTemplateIdInputSchema = z.infer<
-  typeof createEditsByTemplateIdInputSchema
->;
-
-export const createEditsByTemplateId: CreateEditsByTemplateId<
-  CreateEditsByTemplateIdInputSchema,
+export const createPlacedAssetsByTemplateId: CreatePlacedAssetsByTemplateId<
+  z.infer<typeof createPlacedAssetsByTemplateIdInputSchema>,
   Template | null
 > = async (args, context) => {
   if (!context.user) throw new HttpError(401);
@@ -232,18 +192,16 @@ export const createEditsByTemplateId: CreateEditsByTemplateId<
 
   if (!template) throw new HttpError(404, "Template not found");
 
-  await context.entities.DocumentEdit.deleteMany({
+  await context.entities.PlacedAsset.deleteMany({
     where: { templateId: args.templateId },
   });
 
-  const editsWithIds = args.edits.map((edit) => ({
-    ...edit,
-    documentId: args.documentId,
-    templateId: args.templateId,
-  }));
-
-  await context.entities.DocumentEdit.createMany({
-    data: editsWithIds,
+  await context.entities.PlacedAsset.createMany({
+    data: args.placedAssets.map((asset) => ({
+      ...asset,
+      documentId: args.documentId,
+      templateId: args.templateId,
+    })),
   });
 
   return template;
@@ -254,76 +212,77 @@ export const createTemplateInputSchema = z.object({
   documentId: z.string().uuid(),
 });
 
-export type CreateTemplateInput = z.infer<typeof createTemplateInputSchema>;
-
 export const createTemplate: CreateTemplate<
-  CreateTemplateInput,
+  z.infer<typeof createTemplateInputSchema>,
   Template
 > = async (args, context) => {
   if (!context.user) throw new HttpError(401);
 
-  const template = await context.entities.Template.create({
+  return await context.entities.Template.create({
     data: {
       name: args.name,
       documentId: args.documentId,
       userId: context.user.id,
     },
   });
-
-  return template;
 };
 
-export const createSignRoleInputSchema = z.object({
-  name: z.string().min(1),
+const createRecipientInputSchema = z.object({
+  name: z.string().optional(),
+  email: z.string().email().optional(),
   color: z.string().min(1),
-  status: z.enum(["Draft", "Sent", "Signed"]).optional(), // Optional override
+  status: z.enum(["Draft", "Sent", "Signed"]).optional(),
   templateId: z.string().uuid(),
   contactId: z.string().uuid().optional(),
 });
 
-export type CreateSignRoleInput = z.infer<typeof createSignRoleInputSchema>;
-
-export const createSignRole: CreateSignRole<
-  CreateSignRoleInput,
-  SignRole
+export const createRecipient: CreateRecipient<
+  z.infer<typeof createRecipientInputSchema>,
+  Recipient
 > = async (args, context) => {
-  if (!context.user) throw new HttpError(401);
+  if (!context.user) throw new HttpError(401, "Unauthorized");
 
-  // Optional: validate template belongs to user
   const template = await context.entities.Template.findFirst({
-    where: {
-      id: args.templateId,
-      userId: context.user.id,
-    },
+    where: { id: args.templateId, userId: context.user.id },
   });
 
-  if (!template) {
+  if (!template)
     throw new HttpError(403, "Template not found or access denied.");
-  }
 
-  if (args.contactId) {
+  let contactId = args.contactId;
+
+  if (contactId) {
     const contact = await context.entities.Contact.findFirst({
-      where: {
-        id: args.contactId,
-        userId: context.user.id,
-      },
+      where: { id: contactId, userId: context.user.id },
     });
-
     if (!contact) {
       throw new HttpError(403, "Contact not found or access denied.");
     }
+  } else {
+    if (!args.name || !args.email) {
+      throw new HttpError(
+        400,
+        "Name and email are required when contactId is not provided."
+      );
+    }
+
+    const newContact = await context.entities.Contact.create({
+      data: {
+        name: args.name,
+        email: args.email,
+        user: { connect: { id: context.user.id } },
+      },
+    });
+
+    contactId = newContact.id;
   }
 
-  const signRole = await context.entities.SignRole.create({
+  return await context.entities.Recipient.create({
     data: {
-      name: args.name,
       color: args.color,
       status: args.status ?? "Draft",
       templateId: args.templateId,
-      contactId: args.contactId,
-
+      contactId: contactId,
     },
   });
-
-  return signRole;
 };

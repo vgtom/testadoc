@@ -7,10 +7,9 @@ import {
 } from "wasp/client/operations";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
 import withProtectedLayout from "../client/HOC/withProtectedLayout";
-import { getDocumentById } from "wasp/client/operations";
-import { Document, DocumentEdit, Template } from "wasp/entities";
+import { Template } from "wasp/entities";
 import { TemplateEditor } from "../features/document/containers/TemltEditor";
-import { CompleteTemplateObject } from "../features/document/queries";
+import { CompleteTemplateObject } from "../features/document/types";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -38,7 +37,7 @@ const TemplateEditorPage = () => {
         const template: Template | null = await getTemplateById({
           id: templateId,
         });
-        if (!template) throw new Error("Template is missing");
+        if (!template || !template?.documentId) throw new Error("Template is missing");
         const url = await getDownloadDocumentSignedURLByDocId({
           id: template?.documentId,
         });

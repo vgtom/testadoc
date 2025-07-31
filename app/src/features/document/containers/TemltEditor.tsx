@@ -3,10 +3,9 @@ import { Document as PdfDocument, Page } from "react-pdf";
 import DrawingPanel from "../components/DrawingPanel";
 import TemplateEditorToolbar from "../components/TemplateToolbar";
 import PdfPagination from "../components/PdfPagination";
-import { CompleteTemplateObject } from "../queries";
-import { Asset, EditType, PlacedObject } from "../types";
-import { SignRole } from "wasp/entities";
+import { Asset, CompleteTemplateObject, EditType, PlacedObject } from "../types";
 import { PlacedObjectComponent } from "../components/PlacedObject";
+import { Recipient } from "wasp/entities";
 
 type TemplateEditorProps = {
   template: CompleteTemplateObject | null;
@@ -25,7 +24,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [pageHeight, setPageHeight] = useState<number>(1000);
   const [showDrawingPanel, setShowDrawingPanel] = useState<boolean>(false);
-  const [activeRole, setActiveRole] = useState<SignRole>();
+  const [activeRecipient, setActiveRecipient] = useState<Recipient>();
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [placedObjects, setPlacedObjects] = useState<PlacedObject[]>([]);
@@ -33,18 +32,18 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const [activePage, setActivePage] = useState<number>(1);
 
   useEffect(() => {
-    console.log("first color", template?.edits[0]);
-    if (template && template.edits) {
+    console.log("first color", template?.placedAssets[0]);
+    if (template && template.placedAssets) {
       setAssets((prev) => [
         ...prev,
-        ...template.edits.map((i) => ({
+        ...template.placedAssets.map((i) => ({
           id: i.id,
           dataUrl: i.value,
           type: i.type as EditType,
         })),
       ]);
       setPlacedObjects(
-        template.edits.map((i) => ({
+        template.placedAssets.map((i) => ({
           id: i.id,
           type: i.type as EditType,
           assetId: i.id,
@@ -53,8 +52,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           widthPercent: i.widthPercent,
           heightPercent: i.heightPercent,
           pageNumber: i.pageNumber,
-          color: i.role?.color || "transparent",
-          roleId: i.roleId!
+          color: i.recipient?.color || "transparent",
+          recipientId: i.recipientId!
         }))
       );
     }
@@ -138,8 +137,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           widthPercent: pixelsToPercent(initialWidth, width),
           heightPercent: pixelsToPercent(initialHeight, pageHeight),
           pageNumber,
-          color: activeRole?.color || "transparent",
-          roleId: activeRole?.id
+          color: activeRecipient?.color || "transparent",
+          roleId: activeRecipient?.id
         };
         setPlacedObjects((prev) => [...prev, newImage]);
         setSelectedImage(newImage.id);
@@ -161,7 +160,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         setSelectedImage(imageId);
       }
     },
-    [assets, placedObjects, pixelsToPercent, width, pageHeight, activeRole]
+    [assets, placedObjects, pixelsToPercent, width, pageHeight, activeRecipient]
   );
 
   const handleDeleteAsset = (assetId: string) =>
@@ -256,8 +255,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         placedImages={placedObjects}
         setPlacedImages={setPlacedObjects}
         setShowDrawingPanel={setShowDrawingPanel}
-        activeRole={activeRole}
-        setActiveRole={setActiveRole}
+        activeRole={activeRecipient}
+        setActiveRole={setActiveRecipient}
       />
     </div>
   );

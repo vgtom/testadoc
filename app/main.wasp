@@ -136,6 +136,11 @@ page DocumentsPage {
   component: import DocPage from "@src/all-pages/DocPage"
 }
 
+route TemplatesRoute { path: "/templates", to: TemplatesPage}
+page TemplatesPage {
+  component: import TemplatesPage from "@src/all-pages/TemplatesPage"
+}
+
 route SettingsRoute { path: "/settings", to: SettingsPage}
 page SettingsPage {
   component: import SettingsPage from "@src/all-pages/SettingsPage"
@@ -149,6 +154,11 @@ page DocumentPreviewPage {
 route DocumentEditorRoute { path: "/document_editor/:documentId", to: DocumentEditorPage }
 page DocumentEditorPage {
   component: import DocEditorPage from "@src/all-pages/DocEditorPage"
+}
+
+route TemplateEditorRoute { path: "/template_editor/:templateId", to: TemplateEditorPage }
+page TemplateEditorPage {
+  component: import TemplateEditorPage from "@src/all-pages/TemltEditorPage"
 }
 
 //#region User
@@ -243,6 +253,26 @@ query getAllDocuments {
   entities: [User, Document]
 }
 
+query getAllTemplates {
+  fn: import { getAllTemplates } from "@src/features/document/queries",
+  entities: [User, Template]
+}
+
+query getTemplateById {
+  fn: import { getTemplateById } from "@src/features/document/queries",
+  entities: [User, Template]
+}
+
+query getEditsByTemplateId {
+  fn: import { getEditsByTemplateId } from "@src/features/document/queries",
+  entities: [User, Template]
+}
+
+query getSignRolesByTemplateId {
+  fn: import { getSignRolesByTemplateId } from "@src/features/document/queries",
+  entities: [Template, SignRole]
+}
+
 query getEditsByDocumentId {
   fn: import { getEditsByDocumentId } from "@src/features/document/queries",
   entities: [User, Document, DocumentEdit]
@@ -256,6 +286,22 @@ action createDocument {
 action createEditsByDocumentId {
   fn: import { createEditsByDocumentId } from "@src/features/document/operations",
   entities: [User, Document, DocumentEdit]
+}
+
+action createEditsByTemplateId {
+  fn: import { createEditsByTemplateId } from "@src/features/document/operations",
+  entities: [User, Template, DocumentEdit]
+}
+
+action createTemplate {
+  fn: import { createTemplate } from "@src/features/document/operations",
+  entities: [User, Template]
+}
+
+action createSignRole {
+  fn: import { createSignRole } from "@src/features/document/operations",
+  entities: [User, Template, Contact, SignRole],
+  auth: true
 }
 
 query getDocumentById {

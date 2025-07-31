@@ -6,13 +6,41 @@ import {
   Signature,
   Text,
 } from "lucide-react";
-import React, { FC, useCallback, useEffect } from "react";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import { Button } from "../../../components/ui/button";
-import { Asset, EditType, PlacedObject } from "../containers/Editor";
 import { PDFDocument } from "pdf-lib";
-import { createEditsByDocumentId } from "wasp/client/operations";
-import { Document } from "wasp/entities";
-import { uniqueId } from "lodash";
+import {
+  createEditsByTemplateId,
+  getSignRolesByTemplateId,
+  useQuery,
+} from "wasp/client/operations";
+import { CompleteTemplateObject } from "../queries";
+import RoleFormDialog from "./RoleForm";
+import { cn } from "../../../client/cn";
+import { Asset, EditType, PlacedObject } from "../types";
+import { SignRole } from "wasp/entities";
+import { toast } from "sonner";
+
+const templateAssetTools: Asset[] = [
+  {
+    type: EditType.TEMPLATE_DATE,
+    dataUrl: "",
+    id: "1",
+    name: "Date",
+  },
+  {
+    type: EditType.TEMPLATE_INITIAL,
+    dataUrl: "",
+    id: "2",
+    name: "Initial",
+  },
+  {
+    type: EditType.TEMPLATE_SIGN,
+    dataUrl: "",
+    id: "3",
+    name: "Signature",
+  },
+];
 
 type DocTemplateEditorToolbarProp = {
   setShowDrawingPanel: React.Dispatch<React.SetStateAction<boolean>>;
@@ -21,7 +49,9 @@ type DocTemplateEditorToolbarProp = {
   placedImages: PlacedObject[];
   setPlacedImages: React.Dispatch<React.SetStateAction<PlacedObject[]>>;
   fileUrl: string | null;
-  doc: Document | null;
+  template: CompleteTemplateObject | null;
+  setActiveRole: React.Dispatch<React.SetStateAction<SignRole | undefined>>;
+  activeRole: SignRole | undefined;
 };
 
 const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
@@ -31,25 +61,21 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
   placedImages,
   setPlacedImages,
   fileUrl,
-  doc,
+  template,
+  activeRole,
+  setActiveRole,
 }) => {
-  const templateAssetTools: Asset[] = [
-    {
-      type: EditType.TEMPLATE_DATE,
-      dataUrl: "",
-      id: "1",
-    },
-    {
-      type: EditType.TEMPLATE_INITIAL,
-      dataUrl: "",
-      id: "2",
-    },
-    {
-      type: EditType.TEMPLATE_SIGN,
-      dataUrl: "",
-      id: "3",
-    },
-  ];
+  const [showSignRoleForm, setShowSignRoleForm] = useState(false);
+
+  const { data: signRoles } = useQuery(getSignRolesByTemplateId, {
+    templateId: template?.id,
+  });
+
+  useEffect(() => {
+    if (!signRoles?.[0]?.id) return;
+    setActiveRole(signRoles?.[0]);
+    // setActiveRoleColor(getRoleColor(0))
+  }, [signRoles]);
 
   useEffect(() => {
     setAssets((prev) => [...prev, ...templateAssetTools]);
@@ -63,17 +89,7 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
     []
   );
 
-  const handleImageDragStart = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, imageId: string) => {
-      e.dataTransfer.setData("text/plain", `image:${imageId}`);
-      e.dataTransfer.effectAllowed = "move";
-    },
-    []
-  );
-
-  const deleteImage = (imageId: string) => {
-    setPlacedImages((prev) => prev.filter((img) => img.id !== imageId));
-  };
+  const handleAddSignRoleClick = () => setShowSignRoleForm(true);
 
   const exportAsJSON = useCallback(async () => {
     try {
@@ -91,10 +107,10 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
       link.download = `edited-document-${Date.now()}.json`;
       link.click();
       URL.revokeObjectURL(url);
-      alert("Document exported as JSON!");
+      toast("Document exported as JSON!");
     } catch (error) {
       console.error("Export error:", error);
-      alert("Error exporting document as JSON");
+      toast("Error exporting document as JSON");
     }
   }, [fileUrl, assets, placedImages]);
 
@@ -130,7 +146,7 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
         }
       }
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes as Uint8Array], {
+      const blob = new Blob([pdfBytes as Uint8Array<ArrayBuffer>], {
         type: "application/pdf",
       });
 
@@ -140,17 +156,18 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
       link.download = `edited-document-${Date.now()}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
-      alert("Document exported as PDF!");
+      toast("Document exported as PDF!");
     } catch (error) {
       console.error("Export error:", error);
-      alert("Error exporting document as PDF");
+      toast("Error exporting document as PDF");
     }
   }, [placedImages, assets, fileUrl]);
 
   const saveToDB = useCallback(async () => {
-    if (doc) {
+    if (template) {
       const dataToSave = {
-        documentId: doc.id,
+        documentId: template.documentId,
+        templateId: template.id,
         edits: placedImages.map((placedObj) => ({
           pageNumber: placedObj.pageNumber,
           type: placedObj.type,
@@ -159,90 +176,111 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
           yPercent: placedObj.yPercent,
           widthPercent: placedObj.widthPercent,
           heightPercent: placedObj.heightPercent,
-          documentId: doc.id,
+          documentId: template.documentId,
+          roleId: placedObj.roleId as string,
         })),
       };
       console.log(dataToSave);
-      createEditsByDocumentId(dataToSave).then(() => alert("Saved successfully!"))
+      createEditsByTemplateId(dataToSave)
+        .then(() => toast.success("Saved successfully!"))
+        .catch((err) => toast(err));
     }
-  }, [doc, placedImages, assets, fileUrl]);
+  }, [template, placedImages, assets, fileUrl]);
 
   return (
-    <div className="w-64 bg-white shadow-lg p-4 border-r overflow-y-auto">
-      <h2 className="text-xl font-bold mb-6 text-gray-800">PDF Template</h2>
-      {/* <div className="mb-6">
-        <Button
-          variant={"outline"}
-          onClick={() => setShowDrawingPanel(true)}
-          className="w-full flex items-center gap-2 p-3 transition-colors"
-        >
-          <Pencil size={18} /> New Drawing
-        </Button>
-      </div> */}
-      <div className="mb-6">
-        <div className="space-y-2">
-          {templateAssetTools.map((asset) => (
-            <div
-              key={asset.id}
-              className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg cursor-move border"
-              draggable
-              onDragStart={(e) => handleAssetDragStart(e, asset.id)}
-            >
-              <EllipsisVertical />
-
-              {asset.type === EditType.TEMPLATE_DATE && <Calendar />}
-              {asset.type === EditType.TEMPLATE_INITIAL && <Text />}
-              {asset.type === EditType.TEMPLATE_SIGN && <Signature />}
-
-              {asset.type === EditType.IMAGE && (
-                <img
-                  src={asset.dataUrl}
-                  alt="Asset"
-                  className="w-10 h-10 object-cover rounded border"
-                />
-              )}
-              <div className="flex-1">
-                <span className="text-sm font-medium">
-                  Asset {asset.id.slice(-4)}
-                </span>
+    <>
+      <RoleFormDialog
+        showSignRoleForm={showSignRoleForm}
+        setShowSignRoleForm={setShowSignRoleForm}
+        templateId={template?.id}
+      />
+      <div className="w-64 bg-white shadow-lg p-4 border-r overflow-y-auto grid grid-rows-[1fr_min-content]">
+        <div className="mb-6 ">
+          <div className="space-y-2 py-2">
+            {signRoles?.map((role, index) => (
+              <div
+                key={role.id}
+                onClick={() => {
+                  setActiveRole(role);
+                  // setActiveRoleColor(getRoleColor(index));
+                }}
+                style={{ backgroundColor: role.color || "transparent" }}
+                className={cn(
+                  "p-2 bg-gray-100 text-sm text-gray-700 border-2 border-transparent rounded-lg cursor-pointer",
+                  activeRole?.id === role.id ? "border-black" : ""
+                )}
+              >
+                {role.name}
               </div>
-            </div>
-          ))}
-          {assets.length === 0 && (
-            <p className="text-sm text-gray-500 italic">
-              No assets created yet
-            </p>
-          )}
-        </div>
-      </div>
+            ))}
+            <Button
+              onClick={handleAddSignRoleClick} // TODO: Replace with modal or form
+              variant={"outline"}
+              className="w-full"
+            >
+              + Add Sign Role
+            </Button>
+          </div>
+          <hr />
+          <div className="space-y-2 py-2">
+            {templateAssetTools.map((asset) => (
+              <div
+                key={asset.id}
+                className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg cursor-move border"
+                style={{ backgroundColor: activeRole?.color || "transparent" }}
+                draggable
+                onDragStart={(e) => handleAssetDragStart(e, asset.id)}
+              >
+                <EllipsisVertical />
 
-      <div className="mb-6 mt-[5rem]">
-        <h3 className="font-semibold mb-3 text-gray-700">Export Options</h3>
-        <div className="space-y-2">
-          <Button
-            onClick={exportAsJSON}
-            disabled={placedImages.length === 0}
-            className="w-full flex items-center gap-2 p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-          >
-            <Download size={18} /> Export as JSON
-          </Button>
-          <Button
-            onClick={exportAsPDF}
-            disabled={placedImages.length === 0}
-            className="w-full flex items-center gap-2 p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-          >
-            <Download size={18} /> Export as PDF
-          </Button>
-          <Button
-            onClick={saveToDB}
-            // disabled={placedImages.length === 0}
-            className="w-full flex items-center gap-2 p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-          >
-            <Save size={18} /> Save
-          </Button>
+                {asset.type === EditType.TEMPLATE_DATE && <Calendar />}
+                {asset.type === EditType.TEMPLATE_INITIAL && <Text />}
+                {asset.type === EditType.TEMPLATE_SIGN && <Signature />}
+
+                {asset.type === EditType.IMAGE && (
+                  <img
+                    src={asset.dataUrl}
+                    alt="Asset"
+                    className="w-10 h-10 object-cover rounded border"
+                  />
+                )}
+                <div className="flex-1">
+                  <span className="text-sm font-medium">{asset.name}</span>
+                </div>
+              </div>
+            ))}
+            {assets.length === 0 && (
+              <p className="text-sm text-gray-500 italic">
+                No assets created yet
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="mb-6 h-fit">
+          <h3 className="font-semibold mb-3 text-gray-700">Export Options</h3>
+          <div className="space-y-2">
+            <Button
+              onClick={exportAsJSON}
+              // disabled={placedImages.length === 0}
+              className="w-full flex bg-gray-600"
+            >
+              <Download size={18} /> Export as JSON
+            </Button>
+            <Button
+              onClick={exportAsPDF}
+              // disabled={placedImages.length === 0}
+              className="w-full flex bg-gray-600"
+            >
+              <Download size={18} /> Export as PDF
+            </Button>
+            <Button onClick={saveToDB} className="w-full flex bg-gray-800">
+              <Save size={18} /> Save
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

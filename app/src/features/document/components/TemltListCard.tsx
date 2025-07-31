@@ -1,10 +1,9 @@
 import React from "react";
-import { Document } from "wasp/entities";
+import { Document, Template } from "wasp/entities";
 import PdfThumbnailIcon from "../../../client/static/pdf_thumb.png";
 import { Button } from "../../../components/ui/button";
 import { cn } from "../../../lib/utils";
 import { useNavigate } from "react-router-dom";
-import { createTemplate } from "wasp/client/operations";
 import { toast } from "sonner";
 
 const statusColors = {
@@ -13,18 +12,18 @@ const statusColors = {
   Signed: "bg-green-100 text-green-800 border-green-300 border",
 };
 
-export const DocumentCard = ({
-  doc,
+export const TemplateListCard = ({
+  template,
   uploadProgressPercent,
 }: {
-  doc: Partial<Document>;
+  template: Partial<Template>;
   uploadProgressPercent?: number;
 }) => {
   const navigate = useNavigate();
 
   const handleViewClick = async () => {
     try {
-      navigate(`/documents/${doc.id}`);
+      navigate(`/template_signer/${template.id}`);
     } catch (err) {
       toast("Failed to generate secure URL.");
     }
@@ -32,53 +31,37 @@ export const DocumentCard = ({
 
   const handleEditClick = async () => {
     try {
-      navigate(`/document_editor/${doc.id}`);
+      navigate(`/template_editor/${template.id}`);
     } catch (err) {
       toast("Failed to generate secure URL.");
     }
   };
 
-  const handleCreateTemplate = async () => {
-    if (!doc.id) {
-      toast("No doc id");
-      return;
-    }
-    try {
-      createTemplate({ documentId: doc.id, name: "no name for now" }).then(() =>
-        toast("Create template successfully!")
-      );
-    } catch (error) {
-      toast("Failed to create template.");
-    }
-  };
-
   return (
     <div
-      key={doc.id}
+      key={template.id}
       className="flex max-lg:grid flex-nowrap p-4 border rounded-lg shadow-lg bg-white gap-3"
     >
       <div className="w-[100px] h-full max-lg:h-[100px] max-lg:w-full  bg-gray-200 rounded-md flex justify-center items-center p-5">
         <img className="max-h-[85%]" src={PdfThumbnailIcon} alt="" />
       </div>
       <div className="flex flex-col justify-between gap-2 w-full">
-        <p className="font-medium text-sm text-gray-900">{doc.name}</p>
-        {doc.status && (
-          <span
-            className={cn(
-              statusColors[doc.status],
-              "w-fit h-fit text-xs px-1 py-[.5px] rounded-sm"
-            )}
-          >
-            {doc.status}
-          </span>
-        )}
-        <div className="flex gap-2 flex-wrap">
+        <p className="font-medium text-sm text-gray-900">{template.name}</p>
+        {template.status && <span
+          className={cn(
+            statusColors[template.status],
+            "w-fit h-fit text-xs px-1 py-[.5px] rounded-sm"
+          )}
+        >
+          {template.status}
+        </span>}
+        <div className="flex gap-2">
           <Button
             className="w-fit h-fit pl-0"
             variant={"link"}
             onClick={() => handleViewClick()}
           >
-            View
+            Sign
           </Button>
           <Button
             className="w-fit h-fit pl-0"
@@ -86,14 +69,6 @@ export const DocumentCard = ({
             onClick={() => handleEditClick()}
           >
             Edit
-          </Button>
-
-          <Button
-            className="w-fit h-fit pl-0"
-            variant={"link"}
-            onClick={() => handleCreateTemplate()}
-          >
-            Create template
           </Button>
         </div>
         {uploadProgressPercent && (

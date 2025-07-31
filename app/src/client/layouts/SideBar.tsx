@@ -7,12 +7,19 @@ import {
 } from "react-icons/md";
 import { Link, routes } from "wasp/client/router";
 import { cn } from "../cn";
+import { HiDocument } from "react-icons/hi2";
+import { CgTemplate } from "react-icons/cg";
 
 const sidebarContents = [
   {
-    name: "Dashboard",
+    name: "Documents",
     to: routes.DocumentsRoute.to,
-    icon: <MdDashboard />,
+    icon: <HiDocument />,
+  },
+  {
+    name: "Templates",
+    to: routes.TemplatesRoute.to,
+    icon: <CgTemplate />,
   },
   {
     name: "Settings",

@@ -1,19 +1,20 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Document as PdfDocument, Page } from "react-pdf";
 import DrawingPanel from "../components/DrawingPanel";
-import DocumentEditorToolbar from "../components/EditorToolbar";
-import { Document, DocumentEdit } from "wasp/entities";
+import TemplateEditorToolbar from "../components/TemplateToolbar";
 import PdfPagination from "../components/PdfPagination";
+import { CompleteTemplateObject } from "../queries";
 import { Asset, EditType, PlacedObject } from "../types";
+import { SignRole } from "wasp/entities";
 import { PlacedObjectComponent } from "../components/PlacedObject";
 
-type DocumentEditorProps = {
-  doc: (Document & { edits: DocumentEdit[] }) | null;
+type TemplateEditorProps = {
+  template: CompleteTemplateObject | null;
   fileUrl: string | null;
 };
 
-export const DocumentEditor: React.FC<DocumentEditorProps> = ({
-  doc,
+export const TemplateEditor: React.FC<TemplateEditorProps> = ({
+  template,
   fileUrl,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -24,6 +25,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [pageHeight, setPageHeight] = useState<number>(1000);
   const [showDrawingPanel, setShowDrawingPanel] = useState<boolean>(false);
+  const [activeRole, setActiveRole] = useState<SignRole>();
 
   const [assets, setAssets] = useState<Asset[]>([]);
   const [placedObjects, setPlacedObjects] = useState<PlacedObject[]>([]);
@@ -31,17 +33,18 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   const [activePage, setActivePage] = useState<number>(1);
 
   useEffect(() => {
-    if (doc && doc.edits) {
+    console.log("first color", template?.edits[0]);
+    if (template && template.edits) {
       setAssets((prev) => [
         ...prev,
-        ...doc.edits.map((i) => ({
+        ...template.edits.map((i) => ({
           id: i.id,
           dataUrl: i.value,
           type: i.type as EditType,
         })),
       ]);
       setPlacedObjects(
-        doc.edits.map((i) => ({
+        template.edits.map((i) => ({
           id: i.id,
           type: i.type as EditType,
           assetId: i.id,
@@ -50,30 +53,32 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
           widthPercent: i.widthPercent,
           heightPercent: i.heightPercent,
           pageNumber: i.pageNumber,
+          color: i.role?.color || "transparent",
+          roleId: i.roleId!
         }))
       );
     }
-  }, [doc]);
+  }, [template]);
 
   useEffect(() => {
     console.log(assets);
   }, [assets]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
-    const updateWidth = () => {
-      const containerWidth = containerRef.current?.offsetWidth;
+    const updateSize = () => {
+      if (!containerRef.current) return;
+      const containerWidth = containerRef.current.offsetWidth;
       if (containerWidth) {
         const newWidth = containerWidth - 100;
         setWidth(newWidth);
         setPageHeight(newWidth * 1.414);
       }
     };
-    updateWidth();
-    const resizeObserver = new ResizeObserver(updateWidth);
-    resizeObserver.observe(containerRef.current);
-    return () => resizeObserver.disconnect();
-  }, []);
+
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, [containerRef.current]);
 
   const handleLoadSuccess = useCallback(
     ({ numPages }: { numPages: number }) => {
@@ -133,6 +138,8 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
           widthPercent: pixelsToPercent(initialWidth, width),
           heightPercent: pixelsToPercent(initialHeight, pageHeight),
           pageNumber,
+          color: activeRole?.color || "transparent",
+          roleId: activeRole?.id
         };
         setPlacedObjects((prev) => [...prev, newImage]);
         setSelectedImage(newImage.id);
@@ -154,18 +161,18 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         setSelectedImage(imageId);
       }
     },
-    [assets, placedObjects, pixelsToPercent, width, pageHeight]
+    [assets, placedObjects, pixelsToPercent, width, pageHeight, activeRole]
   );
 
   const handleDeleteAsset = (assetId: string) =>
     setPlacedObjects((prev) => prev.filter((i) => i.id !== assetId));
 
   const handlePageClick = (pagenum: number) => setActivePage(pagenum);
-
+  if (!template?.document) return;
   return (
     <div className="flex h-[calc(100vh-6rem)] bg-gray-50">
       <PdfPagination
-        doc={doc}
+        doc={template?.document}
         fileUrl={fileUrl}
         handlePageClick={handlePageClick}
       />
@@ -193,7 +200,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
             ref={containerRef}
             className="bg-white rounded-lg shadow-lg p-6 relative"
           >
-            {doc && (
+            {template && (
               <PdfDocument
                 file={fileUrl}
                 onLoadSuccess={handleLoadSuccess}
@@ -219,17 +226,18 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
                     </div>
                     {placedObjects
                       .filter((img) => img.pageNumber === activePage)
-                      .map((image) => (
+                      .map((placedAsset) => (
                         <PlacedObjectComponent
-                          key={image.id}
-                          placedAsset={image}
-                          asset={assets.find((a) => a.id === image.id)}
+                          key={placedAsset.id}
+                          placedAsset={placedAsset}
+                          asset={assets.find((a) => a.id === placedAsset.assetId)}
                           width={width}
                           pageHeight={pageHeight}
-                          isSelected={selectedImage === image.id}
+                          isSelected={selectedImage === placedAsset.id}
                           setSelectedObject={setSelectedImage}
                           updateObjectPosition={updateImagePosition}
                           onDelete={handleDeleteAsset}
+
                         />
                       ))}
                   </div>
@@ -240,13 +248,16 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         </div>
       </div>
 
-      <DocumentEditorToolbar
-        doc={doc}
+      <TemplateEditorToolbar
+        template={template}
+        setAssets={setAssets}
         assets={assets}
         fileUrl={fileUrl}
         placedImages={placedObjects}
         setPlacedImages={setPlacedObjects}
         setShowDrawingPanel={setShowDrawingPanel}
+        activeRole={activeRole}
+        setActiveRole={setActiveRole}
       />
     </div>
   );

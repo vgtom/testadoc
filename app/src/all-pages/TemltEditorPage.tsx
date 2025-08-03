@@ -8,8 +8,8 @@ import {
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
 import withProtectedLayout from "../client/HOC/withProtectedLayout";
 import { Template } from "wasp/entities";
-import { TemplateEditor } from "../features/document/containers/TemltEditor";
-import { CompleteTemplateObject } from "../features/document/types";
+import { TemplateEditor } from "../features/documents/templates/containers/TemltEditor";
+import { CompleteTemplateObject } from "../features/documents/types";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;

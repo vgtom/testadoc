@@ -22,6 +22,11 @@ const sidebarContents = [
     icon: <CgTemplate />,
   },
   {
+    name: "Contacts",
+    to: routes.ContactsRoute.to,
+    icon: <CgTemplate />,
+  },
+  {
     name: "Settings",
     to: routes.SettingsRoute.to,
     icon: <MdSettings />,

@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
-import { MAX_FILE_SIZE_BYTES } from '../features/document/validation';
+import { MAX_FILE_SIZE_BYTES } from '../features/documents/validation';
 
 const s3Client = new S3Client({
   endpoint: process.env.AWS_S3_ENDPOINT,

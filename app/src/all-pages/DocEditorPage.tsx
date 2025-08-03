@@ -6,8 +6,8 @@ import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
 import withProtectedLayout from "../client/HOC/withProtectedLayout";
 import { getDocumentById } from "wasp/client/operations";
 import { Document, PlacedAsset } from "wasp/entities";
-import { DocumentEditor } from "../features/document/containers/Editor";
-import { CompleteDocument } from "../features/document/types";
+import { DocumentEditor } from "../features/documents/containers/Editor";
+import { CompleteDocument } from "../features/documents/types";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;

@@ -11,7 +11,6 @@ app OpenSaaS {
     "<meta name='description' content='Your apps main description and features.' />",
     "<meta name='author' content='Your (App) Name' />",
     "<meta name='keywords' content='saas, solution, product, app, service' />",
-    
     "<meta property='og:type' content='website' />",
     "<meta property='og:title' content='Your Open SaaS App' />",
     "<meta property='og:site_name' content='Your Open SaaS App' />",
@@ -22,20 +21,13 @@ app OpenSaaS {
     "<meta name='twitter:image:width' content='800' />",
     "<meta name='twitter:image:height' content='400' />",
     "<meta name='twitter:card' content='summary_large_image' />",
-    // TODO: You can put your Plausible analytics scripts below (https://docs.opensaas.sh/guides/analytics/):
-    // NOTE: Plausible does not use Cookies, so you can simply add the scripts here.
-    // Google, on the other hand, does, so you must instead add the script dynamically
-    // via the Cookie Consent component after the user clicks the "Accept" cookies button.
     "<script defer data-domain='<your-site-id>' src='https://plausible.io/js/script.js'></script>",  // for production
     "<script defer data-domain='<your-site-id>' src='https://plausible.io/js/script.local.js'></script>",  // for development
   ],
 
-  // 🔐 Auth out of the box! https://wasp.sh/docs/auth/overview
   auth: {
     userEntity: User,
     methods: {
-      // NOTE: If you decide to not use email auth, make sure to also delete the related routes and pages below.
-      //   (RequestPasswordReset(Route|Page), PasswordReset(Route|Page), EmailVerification(Route|Page))
       email: {
         fromField: {
           name: "Open SaaS App",
@@ -51,30 +43,17 @@ app OpenSaaS {
         },
         userSignupFields: import { getEmailUserFields } from "@src/auth/userSignupFields",
       },
-      // Uncomment to enable Google Auth (check https://wasp.sh/docs/auth/social-auth/google for setup instructions):
-      google: { // Guide for setting up Auth via Google
+      google: {
         userSignupFields: import { getGoogleUserFields } from "@src/auth/userSignupFields",
         configFn: import { getGoogleAuthConfig } from "@src/auth/userSignupFields",
       },
-      // Uncomment to enable GitHub Auth (check https://wasp.sh/docs/auth/social-auth/github for setup instructions):
-      // gitHub: {
-      //   userSignupFields: import { getGitHubUserFields } from "@src/auth/userSignupFields",
-      //   configFn: import { getGitHubAuthConfig } from "@src/auth/userSignupFields",
-      // },
-      // Uncomment to enable Discord Auth (check https://wasp.sh/docs/auth/social-auth/discord for setup instructions):
-      // discord: {
-      //   userSignupFields: import { getDiscordUserFields } from "@src/auth/userSignupFields",
-      //   configFn: import { getDiscordAuthConfig } from "@src/auth/userSignupFields"
-      // }
     },
     onAuthFailedRedirectTo: "/login",
     onAuthSucceededRedirectTo: "/documents",
   },
 
   db: {
-    // Run `wasp db seed` to seed the database with the seed functions below:
     seeds: [
-      // Populates the database with a bunch of fake users to work with during development.
       import { seedMockUsers } from "@src/server/scripts/dbSeeds",
     ]
   },
@@ -84,22 +63,181 @@ app OpenSaaS {
   },
 
   emailSender: {
-    // NOTE: "Dummy" provider is just for local development purposes.
-    //   Make sure to check the server logs for the email confirmation url (it will not be sent to an address)!
-    //   Once you are ready for production, switch to e.g. "SendGrid" or "Mailgun" providers. Check out https://docs.opensaas.sh/guides/email-sending/ .
     provider: Dummy,
     defaultFrom: {
       name: "Open SaaS App",
-      // When using a real provider, e.g. SendGrid, you must use the same email address that you configured your account to send out emails with!
       email: "me@example.com"
     },
   },
 }
 
+//#region Document
+route DocumentsRoute { path: "/documents", to: DocumentsPage }
+page DocumentsPage {
+  component: import DocPage from "@src/all-pages/DocPage"
+}
+
+route DocumentPreviewRoute { path: "/documents/:documentId", to: DocumentPreviewPage }
+page DocumentPreviewPage {
+  component: import DocPreviewPage from "@src/all-pages/DocPreviewPage"
+}
+
+route DocumentEditorRoute { path: "/document_editor/:documentId", to: DocumentEditorPage }
+page DocumentEditorPage {
+  component: import DocEditorPage from "@src/all-pages/DocEditorPage"
+}
+
+// Document Actions
+action createDocument {
+  fn: import { createDocument } from "@src/features/documents/operations/createDocument",
+  entities: [Document, User]
+}
+
+action createPlacedAssetsByDocumentId {
+  fn: import { createPlacedAssetsByDocumentId } from "@src/features/documents/operations/createPlacedAssetsByDocumentId",
+  entities: [Document, PlacedAsset, User]
+}
+
+action updateDocument {
+  fn: import { updateDocument } from "@src/features/documents/operations/updateDocument",
+  entities: [Document, User]
+}
+
+// Document Queries
+query getAllDocuments {
+  fn: import { getAllDocuments } from "@src/features/documents/queries/getAllDocuments",
+  entities: [Document, User]
+}
+
+query getDocumentById {
+  fn: import { getDocumentById } from "@src/features/documents/queries/getDocumentById",
+  entities: [Document, PlacedAsset, Recipient, User]
+}
+
+query getDownloadDocumentSignedURL {
+  fn: import { getDownloadDocumentSignedURL } from "@src/features/documents/queries/getDownloadDocumentSignedURL",
+  entities: [Document, User]
+}
+
+query getDownloadDocumentSignedURLByDocId {
+  fn: import { getDownloadDocumentSignedURLByDocId } from "@src/features/documents/queries/getDownloadDocumentSignedURLByDocId",
+  entities: [Document, User]
+}
+
+query getPlacedAssetsByDocumentId {
+  fn: import { getPlacedAssetsByDocumentId } from "@src/features/documents/queries/getPlacedAssetsByDocumentId",
+  entities: [Document, PlacedAsset, User]
+}
+//#endregion
+
+//#region Template
+route TemplatesRoute { path: "/templates", to: TemplatesPage }
+page TemplatesPage {
+  component: import TemplatesPage from "@src/all-pages/TemplatesPage"
+}
+
+route TemplateEditorRoute { path: "/template_editor/:templateId", to: TemplateEditorPage }
+page TemplateEditorPage {
+  component: import TemplateEditorPage from "@src/all-pages/TemltEditorPage"
+}
+
+// Template Actions
+action createPlacedAssetsByTemplateId {
+  fn: import { createPlacedAssetsByTemplateId } from "@src/features/documents/templates/operations/createPlacedAssetsByTemplateId",
+  entities: [Template, PlacedAsset, Document, User]
+}
+
+action createTemplate {
+  fn: import { createTemplate } from "@src/features/documents/templates/operations/createTemplate",
+  entities: [Template, User]
+}
+
+action updateTemplate {
+  fn: import { updateTemplate } from"@src/features/documents/templates/operations/updateTemplate",
+  entities: [Template, Document, User, PlacedAsset]
+}
+
+action createRecipient {
+  fn: import { createRecipient } from "@src/features/documents/templates/operations/createRecipient",
+  entities: [Recipient, Template, Contact, User]
+}
+
+action updateRecipient {
+  fn: import { updateRecipient } from "@src/features/documents/templates/operations/updateRecipient",
+  entities: [Recipient, Contact, User]
+}
+
+action deleteRecipient {
+  fn: import { deleteRecipient } from "@src/features/documents/templates/operations/deleteRecipient",
+  entities: [Recipient, User]
+}
+
+// Template Queries
+query getAllTemplates {
+  fn: import { getAllTemplates } from "@src/features/documents/templates/queries/getAllTemplates",
+  entities: [Template, User]
+}
+
+query getTemplateById {
+  fn: import { getTemplateById } from "@src/features/documents/templates/queries/getTemplateById",
+  entities: [Template, Document, PlacedAsset, Recipient, User]
+}
+
+query getPlacedAssetsByTemplateId {
+  fn: import { getPlacedAssetsByTemplateId } from "@src/features/documents/templates/queries/getPlacedAssetsByTemplateId",
+  entities: [Template, PlacedAsset, User]
+}
+
+query getRecipientsByTemplateId {
+  fn: import { getRecipientsByTemplateId } from "@src/features/documents/templates/queries/getRecipientsByTemplateId",
+  entities: [Template, Recipient, Contact, User]
+}
+//#endregion
+
+//#region Contact
+
+route ContactsRoute { path: "/contacts", to: ContactsPage }
+page ContactsPage { authRequired: true, component: import ContactsPage from "@src/all-pages/ContactsPage" }
+
+query getAllContacts {
+  fn: import { getAllContacts } from "@src/features/contacts/queries/getAllContacts",
+  entities: [User, Contact]
+}
+
+query getContactById {
+  fn: import { getContactById } from "@src/features/contacts/queries/getContactById",
+  entities: [User, Contact, Recipient]
+}
+
+query getContactByTemplateId {
+  fn: import { getContactByTemplateId } from "@src/features/contacts/queries/getContactByTemplateId",
+  entities: [User, Contact, Template, Recipient]
+}
+
+action createContact {
+  fn: import { createContact } from "@src/features/contacts/operations/createContact",
+  entities: [Contact, User]
+}
+
+action editContact {
+  fn: import { editContact } from "@src/features/contacts/operations/editContact",
+  entities: [Contact, User]
+}
+
+action deleteContact {
+  fn: import { deleteContact } from "@src/features/contacts/operations/deleteContact",
+  entities: [Contact, Recipient, User]
+}
+
+
+//#endregion
+
+//#region Landing Page
 route LandingPageRoute { path: "/", to: LandingPage }
 page LandingPage {
   component: import LandingPage from "@src/landing-page/LandingPage"
 }
+//#endregion
 
 //#region Auth Pages
 route LoginRoute { path: "/login", to: LoginPage }
@@ -127,39 +265,6 @@ page EmailVerificationPage {
   component: import { EmailVerificationPage } from "@src/auth/email-and-pass/EmailVerificationPage",
 }
 //#endregion
-
-
-//#region SignerApp 
-
-route DocumentsRoute { path: "/documents", to: DocumentsPage}
-page DocumentsPage {
-  component: import DocPage from "@src/all-pages/DocPage"
-}
-
-route TemplatesRoute { path: "/templates", to: TemplatesPage}
-page TemplatesPage {
-  component: import TemplatesPage from "@src/all-pages/TemplatesPage"
-}
-
-route SettingsRoute { path: "/settings", to: SettingsPage}
-page SettingsPage {
-  component: import SettingsPage from "@src/all-pages/SettingsPage"
-}
-
-route DocumentPreviewRoute { path: "/documents/:documentId", to: DocumentPreviewPage }
-page DocumentPreviewPage {
-  component: import DocPreviewPage from "@src/all-pages/DocPreviewPage"
-}
-
-route DocumentEditorRoute { path: "/document_editor/:documentId", to: DocumentEditorPage }
-page DocumentEditorPage {
-  component: import DocEditorPage from "@src/all-pages/DocEditorPage"
-}
-
-route TemplateEditorRoute { path: "/template_editor/:templateId", to: TemplateEditorPage }
-page TemplateEditorPage {
-  component: import TemplateEditorPage from "@src/all-pages/TemltEditorPage"
-}
 
 //#region User
 route AccountRoute { path: "/account", to: AccountPage }
@@ -230,7 +335,7 @@ page CheckoutPage {
 }
 
 query getCustomerPortalUrl {
-  fn: import { getCustomerPortalUrl } from  "@src/payment/operations",
+  fn: import { getCustomerPortalUrl } from "@src/payment/operations",
   entities: [User]
 }
 
@@ -247,86 +352,6 @@ api paymentsWebhook {
 }
 //#endregion
 
-//#region Document Upload
-query getAllDocuments {
-  fn: import { getAllDocuments } from "@src/features/document/queries",
-  entities: [User, Document]
-}
-
-query getAllTemplates {
-  fn: import { getAllTemplates } from "@src/features/document/queries",
-  entities: [User, Template]
-}
-
-query getTemplateById {
-  fn: import { getTemplateById } from "@src/features/document/queries",
-  entities: [User, Template]
-}
-
-query getRecipientsByTemplateId {
-  fn: import { getRecipientsByTemplateId } from "@src/features/document/queries",
-  entities: [Template, Recipient]
-}
-
-query getPlacedAssetsByDocumentId {
-  fn: import { getPlacedAssetsByDocumentId } from "@src/features/document/queries",
-  entities: [User, Document, PlacedAsset]
-}
-
-query getPlacedAssetsByTemplateId {
-  fn: import { getPlacedAssetsByTemplateId } from "@src/features/document/queries",
-  entities: [User, Template, PlacedAsset]
-}
-
-
-action createDocument {
-  fn: import { createDocument } from "@src/features/document/operations",
-  entities: [User, Document]
-}
-
-action updateDocument {
-  fn: import { updateDocument } from "@src/features/document/operations",
-  entities: [User, Document]
-}
-
-action createPlacedAssetsByDocumentId {
-  fn: import { createPlacedAssetsByDocumentId } from "@src/features/document/operations",
-  entities: [User, Document, PlacedAsset]
-}
-
-action createPlacedAssetsByTemplateId {
-  fn: import { createPlacedAssetsByTemplateId } from "@src/features/document/operations",
-  entities: [User, Template, PlacedAsset]
-}
-
-action createTemplate {
-  fn: import { createTemplate } from "@src/features/document/operations",
-  entities: [User, Template]
-}
-
-action createRecipient {
-  fn: import { createRecipient } from "@src/features/document/operations",
-  entities: [User, Template, Contact, Recipient],
-  auth: true
-}
-
-query getDocumentById {
-  fn: import { getDocumentById } from "@src/features/document/queries",
-  entities: [User, Document]
-}
-
-query getDownloadDocumentSignedURL {
-  fn: import { getDownloadDocumentSignedURL } from "@src/features/document/operations",
-  entities: [User, Document]
-}
-
-query getDownloadDocumentSignedURLByDocId {
-  fn: import { getDownloadDocumentSignedURLByDocId } from "@src/features/document/operations",
-  entities: [User, Document]
-}
-
-//#endregion
-
 //#region Analytics
 query getDailyStats {
   fn: import { getDailyStats } from "@src/analytics/operations",
@@ -340,7 +365,6 @@ job dailyStatsJob {
   },
   schedule: {
     cron: "0 * * * *" // every hour. useful in production
-    // cron: "* * * * *" // every minute. useful for debugging
   },
   entities: [User, DailyStats, Logs, PageViewSource]
 }
@@ -400,20 +424,26 @@ page AdminUIButtonsPage {
   authRequired: true,
   component: import AdminUI from "@src/admin/elements/ui-elements/ButtonsPage"
 }
+//#endregion
 
+//#region Contact Form Messages
+route AdminMessagesRoute { path: "/admin/messages", to: AdminMessagesPage }
+page AdminMessagesPage {
+  authRequired: true,
+  component: import AdminMessages from "@src/messages/MessagesPage"
+}
+//#endregion
+
+//#region Not Found
 route NotFoundRoute { path: "*", to: NotFoundPage }
 page NotFoundPage {
   component: import { NotFoundPage } from "@src/client/components/NotFoundPage"
 }
 //#endregion
 
-//#region Contact Form Messages
-// TODO: 
-// add functionality to allow users to send messages to admin
-// and make them accessible via the admin dashboard
-route AdminMessagesRoute { path: "/admin/messages", to: AdminMessagesPage }
-page AdminMessagesPage {
-  authRequired: true,
-  component: import AdminMessages from "@src/messages/MessagesPage"
+//#region Settings
+route SettingsRoute { path: "/settings", to: SettingsPage }
+page SettingsPage {
+  component: import SettingsPage from "@src/all-pages/SettingsPage"
 }
 //#endregion

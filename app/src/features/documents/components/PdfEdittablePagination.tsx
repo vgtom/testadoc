@@ -9,7 +9,7 @@ import { Trash, Plus, Upload, Download } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 
 type PdfPaginationProps = {
-  doc: (Document & { placedAssets?: PlacedAsset[] }) | null;
+  doc: (Document & { placedAssets?: PlacedAsset[] | null }) | null;
   fileUrl: string | null;
   handlePageClick: (pagenum: number) => void;
   setPages: React.Dispatch<React.SetStateAction<PageData[]>>;

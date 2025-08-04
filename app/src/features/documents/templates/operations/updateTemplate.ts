@@ -3,11 +3,13 @@ import { type UpdateTemplate } from "wasp/server/operations";
 import * as z from "zod";
 import type { Template } from "wasp/entities";
 
+const statusEnum = z.enum(["Draft", "Sent", "Signed"]);
 
 export const updateTemplateInputSchema = z.object({
+  templateId: z.string().uuid(), // Still required to identify which template
   name: z.string().optional(),
-  documentId: z.string().uuid(),
-  templateId: z.string().uuid(),
+  documentId: z.string().uuid().optional(),
+  status: statusEnum.optional(),
 });
 
 export const updateTemplate: UpdateTemplate<
@@ -16,11 +18,14 @@ export const updateTemplate: UpdateTemplate<
 > = async (args, context) => {
   if (!context.user) throw new HttpError(401);
 
+  const { templateId, ...updates } = args;
+
   return await context.entities.Template.update({
-    where: { id: args.templateId },
+    where: { id: templateId },
     data: {
-      name: args.name,
-      documentId: args.documentId,
+      ...(updates.name && { name: updates.name }),
+      ...(updates.documentId && { documentId: updates.documentId }),
+      ...(updates.status && { status: updates.status }),
       userId: context.user.id,
     },
   });

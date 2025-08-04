@@ -11,7 +11,7 @@ model User {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
 
-  email    String? @unique
+  email    String @unique
   username String? @unique
   isAdmin  Boolean @default(false)
 
@@ -131,8 +131,8 @@ model Template {
 
   placedAssets PlacedAsset[]
 
-  document   Document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  documentId String?
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String
 
   recipients Recipient[]
 }

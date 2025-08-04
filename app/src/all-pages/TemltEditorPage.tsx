@@ -8,7 +8,7 @@ import {
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
 import withProtectedLayout from "../client/HOC/withProtectedLayout";
 import { Template } from "wasp/entities";
-import { TemplateEditor } from "../features/documents/templates/containers/TemltEditor";
+import { TemplateEditor } from "../features/documents/templates/containers/TemEditor";
 import { CompleteTemplateObject } from "../features/documents/types";
 
 // Configure PDF.js worker

@@ -15,7 +15,7 @@ import { cn } from "../../../../lib/utils";
 import { useDrop } from "react-dnd";
 import { Template, type Document } from "wasp/entities";
 import { DocumentCard } from "../../components/DocListCard";
-import { TemplateListCard } from "../components/TemltListCard";
+import { TemplateListCard } from "../components/TemListCard";
 
 // DnD item type for file
 const FILE = "FILE";

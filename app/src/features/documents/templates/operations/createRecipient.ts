@@ -26,14 +26,18 @@ export const createRecipient: CreateRecipient<
     throw new HttpError(403, "Template not found or access denied.");
 
   let contactId = args.contactId;
+  let emailToCheck = args.email;
 
   if (contactId) {
     const contact = await context.entities.Contact.findFirst({
       where: { id: contactId, userId: context.user.id },
     });
+
     if (!contact) {
       throw new HttpError(403, "Contact not found or access denied.");
     }
+
+    emailToCheck = contact.email;
   } else {
     if (!args.name || !args.email) {
       throw new HttpError(
@@ -51,6 +55,19 @@ export const createRecipient: CreateRecipient<
     });
 
     contactId = newContact.id;
+  }
+
+  // 🔒 Check for existing recipient with the same email and template
+  const duplicate = await context.entities.Recipient.findFirst({
+    where: {
+      contact: { email: emailToCheck },
+      templateId: args.templateId,
+    },
+    include: { contact: true },
+  });
+
+  if (duplicate) {
+    throw new HttpError(409, "Recipient with this email already exists for this template.");
   }
 
   return await context.entities.Recipient.create({

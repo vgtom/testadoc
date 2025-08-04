@@ -4,6 +4,7 @@ import { Button } from "../../../../components/ui/button";
 import { cn } from "../../../../lib/utils";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { TemplateWithRecipientId } from "../../templates/queries/getAllSignRequestedTemplates";
 
 const statusColors = {
   Draft: "bg-yellow-100 text-yellow-800 border-yellow-300 border",
@@ -11,30 +12,23 @@ const statusColors = {
   Signed: "bg-green-100 text-green-800 border-green-300 border",
 };
 
-export const TemplateListCard = ({
+export const SignListCard = ({
   template,
   uploadProgressPercent,
 }: {
-  template: Partial<Template>;
+  template: Partial<TemplateWithRecipientId>;
   uploadProgressPercent?: number;
 }) => {
   const navigate = useNavigate();
 
-  const handleViewClick = async () => {
+  const handleSignClick = async () => {
     try {
-      navigate(`/template_signer/${template.id}`);
+      navigate(`/template_signer/${template.recipientId}`);
     } catch (err) {
       toast("Failed to generate secure URL.");
     }
   };
 
-  const handleEditClick = async () => {
-    try {
-      navigate(`/template_editor/${template.id}`);
-    } catch (err) {
-      toast("Failed to generate secure URL.");
-    }
-  };
 
   return (
     <div
@@ -58,16 +52,9 @@ export const TemplateListCard = ({
           <Button
             className="w-fit h-fit pl-0"
             variant={"link"}
-            onClick={() => handleViewClick()}
+            onClick={() => handleSignClick()}
           >
             Sign
-          </Button>
-          <Button
-            className="w-fit h-fit pl-0"
-            variant={"link"}
-            onClick={() => handleEditClick()}
-          >
-            Edit
           </Button>
         </div>
         {uploadProgressPercent && (

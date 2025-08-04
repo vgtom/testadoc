@@ -12,7 +12,7 @@ import { Recipient } from "wasp/entities";
 import toast from "react-hot-toast";
 import PdfEdittablePagination from "../../components/PdfEdittablePagination";
 import { PlacedObjectComponent } from "../../components/PlacedObject";
-import TemplateEditorToolbar from "../components/TemplateToolbar";
+import TemplateEditorToolbar from "../components/TemToolbar";
 import PdfPage from "../../components/PdfPage";
 
 type TemplateEditorProps = {
@@ -206,7 +206,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       {/* Pagination now contains all the reorder logic */}
       <PdfEdittablePagination
         setUpdatedFileAndUrl={setUpdatedFileAndUrl}
-        doc={template?.document}
+        doc={template.document}
         fileUrl={fileUrl}
         handlePageClick={handlePageClick}
         pages={pages}

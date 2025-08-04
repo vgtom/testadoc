@@ -3,6 +3,7 @@ import {
   Download,
   EllipsisVertical,
   Save,
+  Send,
   Signature,
   Text,
 } from "lucide-react";
@@ -10,11 +11,11 @@ import React, { FC, useCallback, useEffect, useState } from "react";
 import { Button } from "../../../../components/ui/button";
 import { PDFDocument } from "pdf-lib";
 import {
-  createDocument,
   createPlacedAssetsByTemplateId,
   getRecipientsByTemplateId,
+  updateRecipient,
   updateTemplate,
-  useQuery,
+  useQuery
 } from "wasp/client/operations";
 import RecipientFormDialog from "./RecipientForm";
 import { cn } from "../../../../client/cn";
@@ -25,10 +26,10 @@ import {
   PlacedObject,
   RecipientWithContact,
 } from "../../types";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { Recipient } from "wasp/entities";
 import { Pencil, Trash2 } from "lucide-react";
-import { updateRecipient, deleteRecipient } from "wasp/client/operations"; // ✅ Add these
+import { deleteRecipient } from "wasp/client/operations"; // ✅ Add these
 import { uploadDocumentWithProgress } from "../../documentUploading";
 
 const templateAssetTools: Asset[] = [
@@ -96,7 +97,9 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
     setPlacedImages((prev) =>
       prev.map((obj) => {
         const recipient = recipients.find((r) => r.id === obj.recipientId);
-        return recipient ? { ...obj, color: recipient.color || undefined } : obj;
+        return recipient
+          ? { ...obj, color: recipient.color || undefined }
+          : obj;
       })
     );
   }, [recipients, setPlacedImages]);
@@ -264,6 +267,26 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
     }
   }, [template, placedImages, assets, updatedFileAndUrl]);
 
+  const handleSendForSignClick = () => {
+    if (
+      !confirm(
+        "You won't be able to make anychanges to the template after sending for sign. Are you sure to send?"
+      )
+    )
+      return;
+    if (!template?.id) {
+      toast.error("Template ID not set.");
+      return;
+    }
+    if (!recipients?.[0].id) return
+    updateRecipient({recipientId: recipients?.[0].id, status: "Sent"}).then(() => {
+      toast.success("Sent to first recipient for sign...");
+    });
+    updateTemplate({ templateId: template.id, status: "Sent" }).then(() => {
+      toast.success("Sent for sign...");
+    });
+  };
+
   return (
     <>
       <RecipientFormDialog
@@ -377,6 +400,13 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
               className="w-full flex bg-gray-600"
             >
               <Download size={18} /> Export as PDF
+            </Button>
+            <Button
+              onClick={handleSendForSignClick}
+              // disabled={placedImages.length === 0}
+              className="w-full flex bg-gray-600"
+            >
+              <Send size={18} /> Send for sign
             </Button>
             <Button onClick={saveToDB} className="w-full flex bg-gray-800">
               <Save size={18} /> Save

@@ -121,7 +121,7 @@ query getDownloadDocumentSignedURL {
 
 query getDownloadDocumentSignedURLByDocId {
   fn: import { getDownloadDocumentSignedURLByDocId } from "@src/features/documents/queries/getDownloadDocumentSignedURLByDocId",
-  entities: [Document, User]
+  entities: [Document, User, Recipient]
 }
 
 query getPlacedAssetsByDocumentId {
@@ -140,6 +140,7 @@ route TemplateEditorRoute { path: "/template_editor/:templateId", to: TemplateEd
 page TemplateEditorPage {
   component: import TemplateEditorPage from "@src/all-pages/TemltEditorPage"
 }
+
 
 // Template Actions
 action createPlacedAssetsByTemplateId {
@@ -183,6 +184,8 @@ query getTemplateById {
   entities: [Template, Document, PlacedAsset, Recipient, User]
 }
 
+
+
 query getPlacedAssetsByTemplateId {
   fn: import { getPlacedAssetsByTemplateId } from "@src/features/documents/templates/queries/getPlacedAssetsByTemplateId",
   entities: [Template, PlacedAsset, User]
@@ -192,7 +195,37 @@ query getRecipientsByTemplateId {
   fn: import { getRecipientsByTemplateId } from "@src/features/documents/templates/queries/getRecipientsByTemplateId",
   entities: [Template, Recipient, Contact, User]
 }
+
+query getTemplateByRecipientId {
+  fn: import { getTemplateByRecipientId } from "@src/features/documents/templates/queries/getTemplateByRecipientId.js",
+  entities: [Template, Recipient, PlacedAsset, Document],
+}
 //#endregion
+
+//#region Signing
+
+route SignRequestsRoute { path: "/template_sign_requests", to: SignRequestsPage }
+page SignRequestsPage {
+  component: import SignRequestsPage from "@src/all-pages/SignRequestsPage"
+}
+
+route SignRoute { path: "/template_signer/:recipientId", to: SignPage }
+page SignPage {
+  component: import SignPage from "@src/all-pages/SignPage"
+}
+
+action updatePlacedAssetsValuesByRecipientId {
+  fn: import { updatePlacedAssetsValuesByRecipientId } from "@src/features/documents/signing/operations/updatePlacedAssetsValuesByRecipientId",
+  entities: [PlacedAsset, Recipient, Contact],
+}
+
+query getAllSignRequestedTemplates {
+  fn: import { getAllSignRequestedTemplates } from "@src/features/documents/templates/queries/getAllSignRequestedTemplates",
+  entities: [User, Contact, Recipient, Template]
+}
+
+//#endregion
+
 
 //#region Contact
 

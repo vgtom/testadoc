@@ -35,14 +35,15 @@ export interface PlacedObject {
   pageNumber: number;
   recipientId: string;
   color?: string;
+  value?: string;
 }
 
 export type RecipientWithContact = Recipient & { contact: Contact };
 
 export type CompleteTemplateObject = Template & {
   placedAssets: (PlacedAsset & { recipient: Recipient | null })[];
-  document: Document & { placedAssets: PlacedAsset[] };
-  recipients: Recipient[];
+  document: Document & { placedAssets: PlacedAsset[] | null };
+  recipients: Recipient[] | null;
 };
 
 export type CompleteDocument = Document & {

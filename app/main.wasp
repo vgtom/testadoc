@@ -216,7 +216,7 @@ page SignPage {
 
 action updatePlacedAssetsValuesByRecipientId {
   fn: import { updatePlacedAssetsValuesByRecipientId } from "@src/features/documents/signing/operations/updatePlacedAssetsValuesByRecipientId",
-  entities: [PlacedAsset, Recipient, Contact],
+  entities: [PlacedAsset, Recipient, Contact, Template],
 }
 
 query getAllSignRequestedTemplates {
@@ -261,6 +261,15 @@ action deleteContact {
   fn: import { deleteContact } from "@src/features/contacts/operations/deleteContact",
   entities: [Contact, Recipient, User]
 }
+
+// #region Common
+
+action createAuditLog { 
+  fn: import { createAuditLog } from "@src/features/common/server/audit/createAuditLog", 
+  entities: [AuditLog, User, Template] 
+}
+
+//#endregion
 
 
 //#endregion

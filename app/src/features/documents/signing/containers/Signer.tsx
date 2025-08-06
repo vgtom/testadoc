@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
+  createAuditLog,
   getDownloadDocumentSignedURLByDocId,
   getTemplateByRecipientId,
   updatePlacedAssetsValuesByRecipientId,
@@ -12,6 +13,8 @@ import { Button } from "../../../../components/ui/button";
 import { PlacedObjectComponent } from "../../components/PlacedObject";
 import TemplateDrawer from "../components/TemplateSignDrawer";
 import toast from "react-hot-toast";
+import { AuditLogActionType } from "wasp/src/features/common/server/audit/auditTypes";
+import { AuditLogTag } from "../../../common/server/audit/auditTypes";
 
 export const TemplateSigner: React.FC = () => {
   const { recipientId } = useParams<{ recipientId: string }>();
@@ -33,6 +36,30 @@ export const TemplateSigner: React.FC = () => {
   const { data: template, isLoading } = useQuery(getTemplateByRecipientId, {
     recipientId: recipientId!,
   });
+
+  // Check if the recipient's status is 'Signed'
+  const isRecipientSigned =
+    template?.recipients?.find((r) => r.id === recipientId)?.status ===
+    "Signed";
+
+  // actionType: AuditLogActionType.ALL_RECIPIENTS_COMPLETED,
+  // actionDescription: `All recipients have completed signing template: ${template.name}`,
+  // templateId: template.id,
+  // recipientId,
+  // tag: AuditLogTag.TEMPLATE_FLOW,
+  useEffect(() => {
+    if (!template?.id) return
+    createAuditLog({
+      actionType: AuditLogActionType.RECIPIENT_OPENED,
+      actionDescription: `Recipient ${template?.recipients?.find(
+        (i) => i.id === recipientId
+      )?.contact.email}`,
+      ipAddress: '',
+      recipientId,
+      tag: AuditLogTag.TEMPLATE_FLOW,
+      templateId: template?.id
+    });
+  }, [template?.id]);
 
   useEffect(() => {
     console.log(placedObjects.map((i) => ({ id: i.id, value: i.value || "" })));
@@ -113,9 +140,8 @@ export const TemplateSigner: React.FC = () => {
 
   const handleSave = () => {
     console.log("Save button clicked");
-
     console.log(placedObjects);
-    if (!recipientId) return
+    if (!recipientId) return;
     updatePlacedAssetsValuesByRecipientId({
       updates: placedObjects
         .filter((i) => i.recipientId === recipientId)
@@ -124,13 +150,30 @@ export const TemplateSigner: React.FC = () => {
           recipientId: recipientId,
           value: i.value || "",
         })),
-    }).then(() => toast("Saved successfully!"))
-    // Add save logic here
+    }).then(() => toast("Saved successfully!"));
+  };
+
+  const handleSaveAndSendToNext = () => {
+    console.log("Save and Complete button clicked");
+    console.log(placedObjects);
+    if (!recipientId) return;
+    updatePlacedAssetsValuesByRecipientId({
+      shouldSendToNextRecipient: true,
+      updates: placedObjects
+        .filter((i) => i.recipientId === recipientId)
+        .map((i) => ({
+          id: i.id,
+          recipientId: recipientId,
+          value: i.value || "",
+        })),
+    })
+      .then(() => toast("Saved successfully!"))
+      .catch((err) => toast.error(err.message));
   };
 
   const handleDecline = () => {
-    console.log("Save and Decline button clicked");
-    // Add save and decline logic here
+    console.log("Decline button clicked");
+    // Add decline logic here
   };
 
   const handleNextAsset = () => {
@@ -181,7 +224,7 @@ export const TemplateSigner: React.FC = () => {
   };
 
   const handleValueChange = (value: string) => {
-    if (!selectedObject) return;
+    if (!selectedObject || isRecipientSigned) return; // Prevent changes if recipient is Signed
     setPlacedObjects((prev) =>
       prev.map((obj) => (obj.id === selectedObject ? { ...obj, value } : obj))
     );
@@ -224,10 +267,25 @@ export const TemplateSigner: React.FC = () => {
   return (
     <main className="h-screen flex flex-col bg-gray-50">
       <nav className="bg-white shadow-sm p-4 flex justify-end gap-4">
-        <Button variant="default" onClick={handleSave}>
+        <Button
+          variant="default"
+          onClick={handleSave}
+          disabled={isRecipientSigned}
+        >
           Save
         </Button>
-        <Button variant="outline" onClick={handleDecline}>
+        <Button
+          variant="default"
+          onClick={handleSaveAndSendToNext}
+          disabled={isRecipientSigned || placedObjects.some((i) => !i.value)}
+        >
+          Save and Complete
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleDecline}
+          disabled={isRecipientSigned}
+        >
           Decline
         </Button>
       </nav>
@@ -278,13 +336,14 @@ export const TemplateSigner: React.FC = () => {
                               isSelected={selectedObject === placedAsset.id}
                               setSelectedObject={(id) => {
                                 setSelectedObject(id);
-                                if (id) setIsDrawerOpen(true);
+                                if (id && !isRecipientSigned)
+                                  setIsDrawerOpen(true);
                               }}
                               updateObjectPosition={() => {}}
                               onDelete={() => {}}
                               onResize={() => {}}
                               isReadOnly
-                              isValueEdittable
+                              isValueEdittable={!isRecipientSigned}
                             />
                           ))}
                       </div>
@@ -306,6 +365,7 @@ export const TemplateSigner: React.FC = () => {
         onValueChange={handleValueChange}
         onNextAsset={handleNextAsset}
         onPreviousAsset={handlePreviousAsset}
+        readOnly={isRecipientSigned}
       />
     </main>
   );

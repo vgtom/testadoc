@@ -40,10 +40,12 @@ export interface PlacedObject {
 
 export type RecipientWithContact = Recipient & { contact: Contact };
 
+
+
 export type CompleteTemplateObject = Template & {
   placedAssets: (PlacedAsset & { recipient: Recipient | null })[];
   document: Document & { placedAssets: PlacedAsset[] | null };
-  recipients: Recipient[] | null;
+  recipients: RecipientWithContact[] | null;
 };
 
 export type CompleteDocument = Document & {

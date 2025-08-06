@@ -15,7 +15,7 @@ import {
   getRecipientsByTemplateId,
   updateRecipient,
   updateTemplate,
-  useQuery
+  useQuery,
 } from "wasp/client/operations";
 import RecipientFormDialog from "./RecipientForm";
 import { cn } from "../../../../client/cn";
@@ -115,11 +115,19 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
   }, []);
 
   const handleEditClick = (recipient: RecipientWithContact) => {
+    if (template?.status === "Sent") {
+      toast.error("You can't modify already sent templates");
+      return;
+    }
     setEditRecipient(recipient);
     setShowSignRecipientForm(true);
   };
 
   const handleDeleteClick = async (recipientId: string) => {
+    if (template?.status === "Sent") {
+      toast.error("You can't modify already sent templates");
+      return;
+    }
     if (!confirm("Are you sure you want to delete this recipient?")) return;
     try {
       await deleteRecipient({ recipientId });
@@ -134,15 +142,25 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
     }
   };
 
-  const handleAssetDragStart = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, assetId: string) => {
-      e.dataTransfer.setData("text/plain", `asset:${assetId}`);
-      e.dataTransfer.effectAllowed = "move";
-    },
-    []
-  );
+  const handleAssetDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    assetId: string
+  ) => {
+    if (template?.status === "Sent") {
+      toast.error("You can't modify already sent templates");
+      return;
+    }
+    e.dataTransfer.setData("text/plain", `asset:${assetId}`);
+    e.dataTransfer.effectAllowed = "move";
+  };
 
-  const handleAddSignRecipientClick = () => setShowSignRecipientForm(true);
+  const handleAddSignRecipientClick = () => {
+    if (template?.status === "Sent") {
+      toast.error("You can't modify already sent templates");
+      return;
+    }
+    setShowSignRecipientForm(true);
+  };
 
   const exportAsJSON = useCallback(async () => {
     try {
@@ -217,6 +235,10 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
   }, [placedImages, assets, fileUrl]);
 
   const saveToDB = useCallback(async () => {
+    if (template?.status === "Sent") {
+      toast.error("You can't modify already sent templates");
+      return;
+    }
     if (!template?.documentId) {
       toast.error("Template and document required");
       return;
@@ -278,10 +300,12 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
       toast.error("Template ID not set.");
       return;
     }
-    if (!recipients?.[0].id) return
-    updateRecipient({recipientId: recipients?.[0].id, status: "Sent"}).then(() => {
-      toast.success("Sent to first recipient for sign...");
-    });
+    if (!recipients?.[0].id) return;
+    updateRecipient({ recipientId: recipients?.[0].id, status: "Sent" }).then(
+      () => {
+        toast.success("Sent to first recipient for sign...");
+      }
+    );
     updateTemplate({ templateId: template.id, status: "Sent" }).then(() => {
       toast.success("Sent for sign...");
     });
@@ -403,12 +427,16 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
             </Button>
             <Button
               onClick={handleSendForSignClick}
-              // disabled={placedImages.length === 0}
+              disabled={template?.status === "Sent"}
               className="w-full flex bg-gray-600"
             >
               <Send size={18} /> Send for sign
             </Button>
-            <Button onClick={saveToDB} className="w-full flex bg-gray-800">
+            <Button
+              onClick={saveToDB}
+              className="w-full flex bg-gray-800"
+              disabled={template?.status === "Sent"}
+            >
               <Save size={18} /> Save
             </Button>
           </div>

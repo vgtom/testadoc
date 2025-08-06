@@ -13,6 +13,7 @@ interface TemplateDrawerProps {
   onValueChange: (value: string) => void;
   onNextAsset: () => void;
   onPreviousAsset: () => void;
+  readOnly?: boolean;
 }
 
 interface DrawingState {
@@ -29,6 +30,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
   onValueChange,
   onNextAsset,
   onPreviousAsset,
+  readOnly,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef<DrawingState>({
@@ -60,7 +62,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
   }, [isOpen, selectedAsset, inputValue]);
 
   const startDrawing = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!drawingRef.current.context) return;
+    if (readOnly || !drawingRef.current.context) return;
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -71,10 +73,10 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
     const ctx = drawingRef.current.context;
     ctx.beginPath();
     ctx.moveTo(x, y);
-  }, []);
+  }, [readOnly]);
 
   const draw = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!drawingRef.current.isDrawing || !drawingRef.current.context) return;
+    if (!drawingRef.current.isDrawing || !drawingRef.current.context || readOnly) return;
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -84,13 +86,14 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
     const ctx = drawingRef.current.context;
     ctx.lineTo(x, y);
     ctx.stroke();
-  }, []);
+  }, [readOnly]);
 
   const stopDrawing = useCallback(() => {
     drawingRef.current.isDrawing = false;
   }, []);
 
   const handleClear = () => {
+    if (readOnly) return;
     if (canvasRef.current && drawingRef.current.context) {
       const canvas = canvasRef.current;
       drawingRef.current.context.clearRect(0, 0, canvas.width, canvas.height);
@@ -100,7 +103,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
   };
 
   const handleSaveSignature = () => {
-    if (!canvasRef.current) return;
+    if (readOnly || !canvasRef.current) return;
     const dataUrl = canvasRef.current.toDataURL("image/png");
     onValueChange(dataUrl);
   };
@@ -129,6 +132,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                 variant="outline"
                 size="sm"
                 className="p-2"
+                disabled={readOnly}
               >
                 <X size={16} />
               </Button>
@@ -141,6 +145,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                       onClick={handleClear}
                       variant="destructive"
                       className="flex items-center gap-2"
+                      disabled={readOnly}
                     >
                       <X size={16} />
                       Clear Date
@@ -152,6 +157,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                     onClick={onPreviousAsset}
                     variant="outline"
                     className="flex items-center gap-2"
+                    disabled={readOnly}
                   >
                     <ChevronLeft size={16} />
                     Previous
@@ -160,6 +166,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                     onClick={onNextAsset}
                     variant="outline"
                     className="flex items-center gap-2"
+                    disabled={readOnly}
                   >
                     Next
                     <ChevronRight size={16} />
@@ -170,11 +177,15 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                 <Input
                   type="date"
                   className="w-full"
+                  value={inputValue}
                   onChange={(e) => onValueChange(e.target.value)}
+                  disabled={readOnly}
                 />
               </div>
               <p className="text-sm text-gray-600 mt-2">
-                Select a date from the calendar above, and it will be applied automatically
+                {readOnly
+                  ? "The date is view-only as the document has been signed."
+                  : "Select a date from the calendar above, and it will be applied automatically"}
               </p>
             </div>
           </>
@@ -192,6 +203,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                 variant="outline"
                 size="sm"
                 className="p-2"
+                disabled={readOnly}
               >
                 <X size={16} />
               </Button>
@@ -202,6 +214,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                   <Button
                     onClick={() => onValueChange(inputValue)}
                     className="flex items-center gap-2"
+                    disabled={readOnly}
                   >
                     <Text size={16} />
                     Save Initial
@@ -211,6 +224,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                       onClick={handleClear}
                       variant="destructive"
                       className="flex items-center gap-2"
+                      disabled={readOnly}
                     >
                       <X size={16} />
                       Clear Initial
@@ -222,6 +236,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                     onClick={onPreviousAsset}
                     variant="outline"
                     className="flex items-center gap-2"
+                    disabled={readOnly}
                   >
                     <ChevronLeft size={16} />
                     Previous
@@ -230,6 +245,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                     onClick={onNextAsset}
                     variant="outline"
                     className="flex items-center gap-2"
+                    disabled={readOnly}
                   >
                     Next
                     <ChevronRight size={16} />
@@ -243,10 +259,13 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                   className="w-full"
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="Enter your initial"
+                  disabled={readOnly}
                 />
               </div>
               <p className="text-sm text-gray-600 mt-2">
-                Type your initial in the input above, then click "Save Initial" to apply it
+                {readOnly
+                  ? "The initial is view-only as the document has been signed."
+                  : "Type your initial in the input above, then click 'Save Initial' to apply it"}
               </p>
             </div>
           </>
@@ -264,6 +283,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                 variant="outline"
                 size="sm"
                 className="p-2"
+                disabled={readOnly}
               >
                 <X size={16} />
               </Button>
@@ -275,6 +295,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                     onClick={handleClear}
                     variant="outline"
                     className="flex items-center gap-2"
+                    disabled={readOnly}
                   >
                     <Trash2 size={16} />
                     Clear
@@ -282,6 +303,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                   <Button
                     onClick={handleSaveSignature}
                     className="flex items-center gap-2"
+                    disabled={readOnly}
                   >
                     <Save size={16} />
                     Save Signature
@@ -292,6 +314,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                     onClick={onPreviousAsset}
                     variant="outline"
                     className="flex items-center gap-2"
+                    disabled={readOnly}
                   >
                     <ChevronLeft size={16} />
                     Previous
@@ -300,6 +323,7 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                     onClick={onNextAsset}
                     variant="outline"
                     className="flex items-center gap-2"
+                    disabled={readOnly}
                   >
                     Next
                     <ChevronRight size={16} />
@@ -311,25 +335,30 @@ const TemplateDrawer: FC<TemplateDrawerProps> = ({
                   ref={canvasRef}
                   width={700}
                   height={300}
-                  className="cursor-crosshair block w-full bg-transparent"
+                  className={`cursor-${readOnly ? "default" : "crosshair"} block w-full bg-transparent`}
                   style={{ background: "transparent" }}
                   onMouseDown={(e) => {
+                    if (readOnly) return;
                     e.stopPropagation();
                     startDrawing(e);
                   }}
                   onMouseMove={(e) => {
-                    if (drawingRef.current.isDrawing) e.stopPropagation();
+                    if (readOnly || !drawingRef.current.isDrawing) return;
+                    e.stopPropagation();
                     draw(e);
                   }}
                   onMouseUp={(e) => {
+                    if (readOnly) return;
                     e.stopPropagation();
                     stopDrawing();
                   }}
-                  onMouseLeave={stopDrawing}
+                  onMouseLeave={readOnly ? undefined : stopDrawing}
                 />
               </div>
               <p className="text-sm text-gray-600 mt-2">
-                Draw your signature on the canvas above, then click "Save Signature" to apply it
+                {readOnly
+                  ? "The signature is view-only as the document has been signed."
+                  : "Draw your signature on the canvas above, then click 'Save Signature' to apply it"}
               </p>
             </div>
           </>

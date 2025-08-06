@@ -24,6 +24,7 @@ interface PlacedImageProps {
   onResize?: (id: string, widthPercent: number, heightPercent: number) => void;
   isReadOnly?: boolean;
   isValueEdittable?: boolean;
+  showValue?: boolean
 }
 
 export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({

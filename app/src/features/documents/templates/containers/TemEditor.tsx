@@ -66,6 +66,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           pageNumber: i.pageNumber,
           color: i.recipient?.color || "transparent",
           recipientId: i.recipientId!,
+          value: template.status === "Sent" ? i.value : ""
         }))
       );
     }
@@ -213,6 +214,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         setPages={setPages}
         placedObjects={placedObjects}
         setPlacedObjects={setPlacedObjects}
+        readonly={template.status === "Sent"}
       />
 
       <div className="flex-1 p-6 overflow-auto ">
@@ -298,6 +300,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                           setSelectedObject={setSelectedImage}
                           updateObjectPosition={updateImagePosition}
                           onDelete={handleDeleteAsset}
+                          isReadOnly={template.status === "Sent"}
                         />
                       ))}
                   </div>

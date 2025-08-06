@@ -1,18 +1,19 @@
 import { Recipient, Contact, User } from "wasp/entities";
 import { HttpError } from "wasp/server";
-import { type UpdateRecipient } from "wasp/server/operations";
+import { createAuditLog, type UpdateRecipient } from "wasp/server/operations";
 import * as z from "zod";
 import { sendMail } from "../../../../lib/mailSender";
+import { AuditLogActionType, AuditLogTag } from "../../../common/server/audit/auditTypes";
 
 // Optional: define allowed statuses
-const RecipientStatusEnum = z.enum(["Draft", "Sent", "Signed"]); // Adjust as per your model
+const RecipientStatusEnum = z.enum(["Draft", "Sent", "Signed"]);
 
 const updateRecipientInputSchema = z.object({
   recipientId: z.string().uuid(),
   color: z.string().optional(),
   contactName: z.string().optional(),
   contactEmail: z.string().email().optional(),
-  status: RecipientStatusEnum.optional(), // ✅ Added status
+  status: RecipientStatusEnum.optional(),
 });
 
 type UpdateRecipientPayload = z.infer<typeof updateRecipientInputSchema>;
@@ -41,8 +42,9 @@ export const updateRecipient: UpdateRecipient<
     throw new HttpError(404, "Recipient not found");
   }
 
+  // Send email if status is updated to "Sent"
   if (status === "Sent") {
-    sendMail({
+    await sendMail({
       from: "signadoc@example.com",
       to: recipient.contact.email,
       subject: "You are invited to sign a document",
@@ -57,6 +59,22 @@ export const updateRecipient: UpdateRecipient<
             ${recipient.template.user.username}
             Sent using SignAdoc free document signing.`,
     });
+  }
+
+  // Create audit log if status is updated to "Signed"
+  if (status === "Sent") {
+    await createAuditLog(
+      {
+        actionType: AuditLogActionType.SENT_TO_FIRST_RECIPIENT,
+        actionDescription: `Recipient ${recipient.contact.email} marked as Signed for template: ${recipient.template.name}`,
+        templateId: recipient.templateId,
+        recipientId: recipient.id,
+        tag: AuditLogTag.TEMPLATE_FLOW,
+      },
+      {
+        user,
+      }
+    );
   }
 
   // Update recipient (color + status)

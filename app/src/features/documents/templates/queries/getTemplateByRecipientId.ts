@@ -31,7 +31,11 @@ export const getTemplateByRecipientId: GetTemplateByRecipientId<
       document: {
         include: { placedAssets: true },
       },
-      recipients: true,
+      recipients: {
+        include: {
+          contact: true
+        }
+      },
     },
   });
 

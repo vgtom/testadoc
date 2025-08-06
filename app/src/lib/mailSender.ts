@@ -7,7 +7,7 @@ export const transporter = nodemailer.createTransport({
   secure: false,
 });
 
-export const sendMail = ({
+export const sendMail = async ({
   from,
   to,
   subject,

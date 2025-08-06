@@ -30,7 +30,11 @@ export const getAllSignRequestedTemplates: GetAllSignRequestedTemplates<
               placedAssets: true,
             },
           },
-          recipients: true,
+          recipients: {
+            include: {
+              contact: true, // Include contact for each recipient
+            },
+          },
           placedAssets: {
             include: {
               recipient: true,

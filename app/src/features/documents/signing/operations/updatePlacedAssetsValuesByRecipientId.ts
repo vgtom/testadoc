@@ -70,7 +70,7 @@ export const updatePlacedAssetsValuesByRecipientId: UpdatePlacedAssetsValuesByRe
     // Check if all placed assets for the recipient have a value
     const allRecipientAssets = await context.entities.PlacedAsset.findMany({
       where: { recipientId },
-    });
+    }); 
 
     const assetsWithoutValue = allRecipientAssets.filter(
       (asset) => !asset.value || asset.value.trim() === ""
@@ -86,7 +86,7 @@ export const updatePlacedAssetsValuesByRecipientId: UpdatePlacedAssetsValuesByRe
     // Set the current recipient's status to 'Signed'
     await context.entities.Recipient.update({
       where: { id: recipientId },
-      data: { status: "Signed" },
+      data: { status: "Finished" },
     });
 
     // Find and notify the next recipient
@@ -116,7 +116,7 @@ export const updatePlacedAssetsValuesByRecipientId: UpdatePlacedAssetsValuesByRe
         // If last recipient, set template status to 'Signed' and log audit
         await context.entities.Template.update({
           where: { id: template.id },
-          data: { status: "Signed" },
+          data: { status: "Completed" },
         });
 
         await createAuditLog(
@@ -140,7 +140,7 @@ export const updatePlacedAssetsValuesByRecipientId: UpdatePlacedAssetsValuesByRe
           // Update the next recipient's status to 'Sent'
           await context.entities.Recipient.update({
             where: { id: nextRecipient.id },
-            data: { status: "Sent" },
+            data: { status: "Recieved" },
           });
 
           // Create an audit log entry for sending to the next recipient

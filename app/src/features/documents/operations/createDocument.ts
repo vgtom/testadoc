@@ -42,7 +42,6 @@ export const createDocument: CreateDocument<
     data: {
       name: fileName,
       key: key,
-      status: "Draft",
       user: { connect: { id: context.user.id } },
       url: s3UploadUrl,
     },

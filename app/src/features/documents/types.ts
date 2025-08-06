@@ -6,6 +6,7 @@ import {
   Recipient,
   Template,
 } from "wasp/entities";
+import z from "zod";
 
 export interface Asset {
   id: string;
@@ -62,3 +63,24 @@ export interface PageData {
   sourceDocId?: string;
   fileName?: "[Saved]" | string
 }
+
+export const ZTemplateStatusEnum = z.enum(['Draft', 'Sent', 'Completed']);
+
+export type TemplateStatus = z.infer<typeof ZTemplateStatusEnum>;
+
+export const ZRecipientStatusEnum = z.enum(['Draft', 'Recieved', 'Viewed', 'Finished']);
+
+export type RecipientStatus = z.infer<typeof ZRecipientStatusEnum>;
+
+export type PaginatedResponse<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export type PaginationInput = {
+  page: number;
+  pageSize: number;
+};

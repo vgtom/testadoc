@@ -4,11 +4,12 @@ import { Button } from "../../../../components/ui/button";
 import { cn } from "../../../../lib/utils";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { TemplateStatus } from "../../types";
 
-const statusColors = {
+const statusColors: Record<TemplateStatus, string> = {
   Draft: "bg-yellow-100 text-yellow-800 border-yellow-300 border",
   Sent: "bg-blue-100 text-blue-800 border-blue-300 border",
-  Signed: "bg-green-100 text-green-800 border-green-300 border",
+  Completed: "bg-green-100 text-green-800 border-green-300 border",
 };
 
 export const TemplateListCard = ({

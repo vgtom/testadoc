@@ -9,7 +9,7 @@ import { Link, routes } from "wasp/client/router";
 import { cn } from "../cn";
 import { HiDocument } from "react-icons/hi2";
 import { CgTemplate } from "react-icons/cg";
-import { Signature } from "lucide-react";
+import { Goal, Signature } from "lucide-react";
 
 const sidebarContents = [
   {
@@ -21,6 +21,11 @@ const sidebarContents = [
     name: "Templates",
     to: routes.TemplatesRoute.to,
     icon: <CgTemplate />,
+  },
+  {
+    name: "Submissions",
+    to: routes.SubmissionsRoute.to,
+    icon: <Goal />,
   },
   {
     name: "Sign requests",

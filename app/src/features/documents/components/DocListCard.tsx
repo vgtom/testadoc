@@ -66,16 +66,7 @@ export const DocumentCard = ({
       </div>
       <div className="flex flex-col justify-between gap-2 w-full">
         <p className="font-medium text-sm text-gray-900">{doc.name}</p>
-        {doc.status && (
-          <span
-            className={cn(
-              statusColors[doc.status],
-              "w-fit h-fit text-xs px-1 py-[.5px] rounded-sm"
-            )}
-          >
-            {doc.status}
-          </span>
-        )}
+        
         <div className="flex gap-2 flex-wrap">
           <Button
             className="w-fit h-fit pl-0"

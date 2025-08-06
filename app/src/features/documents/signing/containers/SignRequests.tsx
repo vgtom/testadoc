@@ -15,7 +15,6 @@ export default function TemplateSignRequests() {
       onDragOver={(e) => e.preventDefault()}
     >
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">Sign requestes</h2>
       </div>
 
       <div
@@ -26,7 +25,7 @@ export default function TemplateSignRequests() {
         )}
       >
         {templates?.map((template: TemplateWithRecipientId) => (
-          <SignListCard template={template} key={template.id} />
+          <SignListCard template={template} key={template.id}  />
         ))}
       </div>
     </div>

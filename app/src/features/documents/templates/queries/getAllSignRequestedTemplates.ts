@@ -20,7 +20,9 @@ export const getAllSignRequestedTemplates: GetAllSignRequestedTemplates<
       contact: {
         email: context.user.email,
       },
-      status: "Sent",
+      NOT: {
+        status: "Draft",
+      },
     },
     include: {
       template: {

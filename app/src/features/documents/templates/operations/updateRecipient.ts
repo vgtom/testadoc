@@ -3,17 +3,18 @@ import { HttpError } from "wasp/server";
 import { createAuditLog, type UpdateRecipient } from "wasp/server/operations";
 import * as z from "zod";
 import { sendMail } from "../../../../lib/mailSender";
-import { AuditLogActionType, AuditLogTag } from "../../../common/server/audit/auditTypes";
-
-// Optional: define allowed statuses
-const RecipientStatusEnum = z.enum(["Draft", "Sent", "Signed"]);
+import {
+  AuditLogActionType,
+  AuditLogTag,
+} from "../../../common/server/audit/auditTypes";
+import { ZRecipientStatusEnum } from "../../types";
 
 const updateRecipientInputSchema = z.object({
   recipientId: z.string().uuid(),
   color: z.string().optional(),
   contactName: z.string().optional(),
   contactEmail: z.string().email().optional(),
-  status: RecipientStatusEnum.optional(),
+  status: ZRecipientStatusEnum.optional(),
 });
 
 type UpdateRecipientPayload = z.infer<typeof updateRecipientInputSchema>;
@@ -33,17 +34,39 @@ export const updateRecipient: UpdateRecipient<
   const recipient = await context.entities.Recipient.findFirst({
     where: {
       id: recipientId,
-      template: { userId: user.id },
     },
-    include: { contact: true, template: { include: { document: true, user: true } } },
+    include: {
+      contact: true,
+      template: { include: { document: true, user: true, recipients: true } },
+    },
   });
 
   if (!recipient) {
     throw new HttpError(404, "Recipient not found");
   }
 
-  // Send email if status is updated to "Sent"
-  if (status === "Sent") {
+  if (recipient.status === "Finished") {
+    throw new HttpError(400, "This recipient already finished.");
+  }
+
+  if (status === "Recieved") {
+    const otherRecipients = recipient.template.recipients.filter(
+      (r) => r.id !== recipientId
+    );
+    const allOthersDraft = otherRecipients.every((r) => r.status === "Draft");
+    if (allOthersDraft && otherRecipients.length >= 0) {
+      await createAuditLog(
+        {
+          actionType: AuditLogActionType.SENT_TO_FIRST_RECIPIENT,
+          actionDescription: `Template ${recipient.template.name} sent to first recipient: ${recipient.contact.email}`,
+          templateId: recipient.templateId,
+          recipientId: recipient.id,
+          tag: AuditLogTag.TEMPLATE_FLOW,
+        },
+        { user }
+      );
+    }
+
     await sendMail({
       from: "signadoc@example.com",
       to: recipient.contact.email,
@@ -61,23 +84,32 @@ export const updateRecipient: UpdateRecipient<
     });
   }
 
-  // Create audit log if status is updated to "Signed"
-  if (status === "Sent") {
+  if (status === "Viewed" && recipient.status !== "Viewed") {
     await createAuditLog(
       {
-        actionType: AuditLogActionType.SENT_TO_FIRST_RECIPIENT,
+        actionType: AuditLogActionType.RECIPIENT_OPENED,
+        actionDescription: `Recipient ${recipient.contact.email} marked as Viewed for template: ${recipient.template.name}`,
+        templateId: recipient.templateId,
+        recipientId: recipient.id,
+        tag: AuditLogTag.TEMPLATE_FLOW,
+      },
+      { user }
+    );
+  }
+
+  if (status === "Finished") {
+    await createAuditLog(
+      {
+        actionType: AuditLogActionType.ALL_RECIPIENTS_COMPLETED,
         actionDescription: `Recipient ${recipient.contact.email} marked as Signed for template: ${recipient.template.name}`,
         templateId: recipient.templateId,
         recipientId: recipient.id,
         tag: AuditLogTag.TEMPLATE_FLOW,
       },
-      {
-        user,
-      }
+      { user }
     );
   }
 
-  // Update recipient (color + status)
   const updatedRecipient = await context.entities.Recipient.update({
     where: { id: recipientId },
     data: {
@@ -86,7 +118,6 @@ export const updateRecipient: UpdateRecipient<
     },
   });
 
-  // Optionally update contact
   if (contactName || contactEmail) {
     await context.entities.Contact.update({
       where: { id: recipient.contactId },

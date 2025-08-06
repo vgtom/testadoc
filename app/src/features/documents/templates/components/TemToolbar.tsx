@@ -69,6 +69,8 @@ type DocTemplateEditorToolbarProp = {
     url: string;
     file: File | null;
   };
+  onSendForSignClick?: () => void;
+  isReadOnly?: boolean;
 };
 
 const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
@@ -82,6 +84,8 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
   activeRecipient,
   setActiveRecipient,
   updatedFileAndUrl,
+  onSendForSignClick,
+  isReadOnly,
 }) => {
   const [showSignRecipientForm, setShowSignRecipientForm] = useState(false);
   const [editRecipient, setEditRecipient] =
@@ -115,7 +119,7 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
   }, []);
 
   const handleEditClick = (recipient: RecipientWithContact) => {
-    if (template?.status === "Sent") {
+    if (isReadOnly) {
       toast.error("You can't modify already sent templates");
       return;
     }
@@ -124,7 +128,7 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
   };
 
   const handleDeleteClick = async (recipientId: string) => {
-    if (template?.status === "Sent") {
+    if (isReadOnly) {
       toast.error("You can't modify already sent templates");
       return;
     }
@@ -146,7 +150,7 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
     e: React.DragEvent<HTMLDivElement>,
     assetId: string
   ) => {
-    if (template?.status === "Sent") {
+    if (isReadOnly) {
       toast.error("You can't modify already sent templates");
       return;
     }
@@ -155,7 +159,7 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
   };
 
   const handleAddSignRecipientClick = () => {
-    if (template?.status === "Sent") {
+    if (isReadOnly) {
       toast.error("You can't modify already sent templates");
       return;
     }
@@ -235,7 +239,7 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
   }, [placedImages, assets, fileUrl]);
 
   const saveToDB = useCallback(async () => {
-    if (template?.status === "Sent") {
+    if (isReadOnly) {
       toast.error("You can't modify already sent templates");
       return;
     }
@@ -301,13 +305,17 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
       return;
     }
     if (!recipients?.[0].id) return;
-    updateRecipient({ recipientId: recipients?.[0].id, status: "Sent" }).then(
-      () => {
+    onSendForSignClick?.();
+    saveToDB().then(() => {
+      updateRecipient({
+        recipientId: recipients?.[0].id,
+        status: "Recieved",
+      }).then(() => {
         toast.success("Sent to first recipient for sign...");
-      }
-    );
-    updateTemplate({ templateId: template.id, status: "Sent" }).then(() => {
-      toast.success("Sent for sign...");
+      });
+      updateTemplate({ templateId: template.id, status: "Sent" }).then(() => {
+        toast.success("Sent for sign...");
+      });
     });
   };
 
@@ -409,33 +417,25 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
         </div>
 
         <div className="mb-6 h-fit">
-          <h3 className="font-semibold mb-3 text-gray-700">Export Options</h3>
           <div className="space-y-2">
-            <Button
+            {/* <Button
               onClick={exportAsJSON}
-              // disabled={placedImages.length === 0}
               className="w-full flex bg-gray-600"
             >
               <Download size={18} /> Export as JSON
-            </Button>
-            <Button
-              onClick={exportAsPDF}
-              // disabled={placedImages.length === 0}
-              className="w-full flex bg-gray-600"
-            >
-              <Download size={18} /> Export as PDF
-            </Button>
+            </Button> */}
+
             <Button
               onClick={handleSendForSignClick}
-              disabled={template?.status === "Sent"}
-              className="w-full flex bg-gray-600"
+              disabled={isReadOnly}
+              className="w-full flex bg-gray-800"
             >
               <Send size={18} /> Send for sign
             </Button>
             <Button
               onClick={saveToDB}
               className="w-full flex bg-gray-800"
-              disabled={template?.status === "Sent"}
+              disabled={isReadOnly}
             >
               <Save size={18} /> Save
             </Button>

@@ -2,12 +2,13 @@ import { HttpError } from 'wasp/server';
 import { type CreateRecipient } from 'wasp/server/operations';
 import * as z from 'zod';
 import type { Recipient } from 'wasp/entities';
+import { ZRecipientStatusEnum } from '../../types';
 
 const createRecipientInputSchema = z.object({
   name: z.string().optional(),
   email: z.string().email().optional(),
   color: z.string().min(1),
-  status: z.enum(["Draft", "Sent", "Signed"]).optional(),
+  status: ZRecipientStatusEnum.optional(),
   templateId: z.string().uuid(),
   contactId: z.string().uuid().optional(),
 });

@@ -65,7 +65,7 @@ export const createAuditLog: CreateAuditLog<
       actionType,
       actionDescription,
       tag,
-      ipAddress,
+      ipAddress: ipAddress || (context as any).clientIp,
       user: { connect: { id: context.user.id } },
       ...(templateId && { template: { connect: { id: templateId } } }),
       ...(recipientId && { recipient: { connect: { id: recipientId } } }),

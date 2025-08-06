@@ -68,11 +68,7 @@ model File {
   uploadUrl String
 }
 
-enum Status {
-  Draft
-  Sent
-  Signed
-}
+
 
 enum AssetType {
   TEXT
@@ -92,7 +88,6 @@ model Document {
 
   name   String
   key    String @default("")
-  status Status @default(Draft)
   url    String
 
   placedAssets PlacedAsset[]
@@ -120,6 +115,13 @@ model PlacedAsset {
   recipientId String?
 }
 
+
+enum TemplateStatus {
+  Draft
+  Sent
+  Completed
+}
+
 model Template {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
@@ -128,7 +130,7 @@ model Template {
   userId String
 
   name   String
-  status Status @default(Draft)
+  status TemplateStatus @default(Draft)
 
   placedAssets PlacedAsset[]
 
@@ -139,12 +141,19 @@ model Template {
   AuditLog   AuditLog[]
 }
 
+enum RecipientStatus {
+  Draft
+  Recieved
+  Viewed
+  Finished
+}
+
 model Recipient {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
 
   color  String?
-  status Status  @default(Draft)
+  status RecipientStatus  @default(Draft)
 
   contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
   contactId String

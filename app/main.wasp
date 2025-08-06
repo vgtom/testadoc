@@ -69,6 +69,10 @@ app OpenSaaS {
       email: "me@example.com"
     },
   },
+
+  server: {
+    middlewareConfigFn: import { middlewareConfig } from "@src/server/middlewareConfig"
+  }
 }
 
 //#region Document
@@ -131,6 +135,11 @@ query getPlacedAssetsByDocumentId {
 //#endregion
 
 //#region Template
+route SubmissionPreviewRoute { path: "/submissions/:templateId", to: SubmissionPreviewPage }
+page SubmissionPreviewPage {
+  component: import SubmissionPreviewPage from "@src/all-pages/SubmissionPreviewPage"
+}
+
 route TemplatesRoute { path: "/templates", to: TemplatesPage }
 page TemplatesPage {
   component: import TemplatesPage from "@src/all-pages/TemplatesPage"
@@ -181,10 +190,14 @@ query getAllTemplates {
 
 query getTemplateById {
   fn: import { getTemplateById } from "@src/features/documents/templates/queries/getTemplateById",
-  entities: [Template, Document, PlacedAsset, Recipient, User]
+  entities: [Template, Document, Recipient, User]
 }
 
-
+// main.wasp (in the Template section)
+query getAllTemplateSubmissions {
+  fn: import { getAllTemplateSubmissions } from "@src/features/documents/templates/queries/getAllTemplateSubmissions",
+  entities: [Template, PlacedAsset, Document, Recipient, Contact, User]
+}
 
 query getPlacedAssetsByTemplateId {
   fn: import { getPlacedAssetsByTemplateId } from "@src/features/documents/templates/queries/getPlacedAssetsByTemplateId",
@@ -203,6 +216,11 @@ query getTemplateByRecipientId {
 //#endregion
 
 //#region Signing
+
+route SubmissionsRoute { path: "/submissions", to: SubmissionsPage }
+page SubmissionsPage {
+  component: import SubmissionsPage from "@src/all-pages/SubmissionsPage"
+}
 
 route SignRequestsRoute { path: "/template_sign_requests", to: SignRequestsPage }
 page SignRequestsPage {
@@ -264,9 +282,15 @@ action deleteContact {
 
 // #region Common
 
+query getAuditLogByTemplateId {
+  fn: import { getAuditLogByTemplateId } from "@src/features/common/server/audit/getAuditLogByTemplateId",
+  entities: [AuditLog, Template]
+}
+
+
 action createAuditLog { 
   fn: import { createAuditLog } from "@src/features/common/server/audit/createAuditLog", 
-  entities: [AuditLog, User, Template] 
+  entities: [AuditLog, User, Template, ] 
 }
 
 //#endregion

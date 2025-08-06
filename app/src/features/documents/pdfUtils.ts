@@ -1,5 +1,9 @@
 import { PDFDocument } from "pdf-lib";
-import { PageData } from "./types";
+import { EditType, PageData } from "./types";
+import { pdfjs } from "react-pdf";
+import { jsPDF } from "jspdf";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
+import { PlacedAsset } from "wasp/entities";
 
 // Creates a new PDF file from an array of pages with their parent documents
 export async function createPdfFileFromPageData(
@@ -208,3 +212,83 @@ export function normalizePageNumbers(pages: PageData[]): PageData[] {
     pageNumber: index + 1,
   }));
 }
+
+
+export async function downloadPdfWithOverlay(pdfUrl: string, overlay: PlacedAsset[]): Promise<void> {
+  if (!pdfUrl) {
+    throw new Error("PDF URL is required");
+  }
+
+  try {
+    // const response = await fetch(pdfUrl, { method: "HEAD" });
+    // if (!response.ok) {
+    //   throw new Error(`Failed to access PDF: ${response.statusText}`);
+    // }
+
+    const pdfDoc = await pdfjs.getDocument(pdfUrl).promise;
+    const numPages = pdfDoc.numPages;
+
+    const PDF_WIDTH = 595.28;
+    const PDF_HEIGHT = 841.89;
+    const SCALE = 2.0;
+
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = page.getViewport({ scale: SCALE });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      const context = canvas.getContext("2d");
+      if (!context) {
+        throw new Error("Canvas context not available");
+      }
+
+      await page.render({ canvasContext: context, viewport }).promise;
+
+      if (pageNum > 1) {
+        doc.addPage();
+      }
+
+      doc.addImage(
+        canvas.toDataURL("image/jpeg", 1.0),
+        "JPEG",
+        0,
+        0,
+        PDF_WIDTH,
+        PDF_HEIGHT
+      );
+
+      const pageAssets = overlay.filter((asset) => asset.pageNumber === pageNum);
+      for (const asset of pageAssets) {
+        const x = asset.xPercent * PDF_WIDTH;
+        const y = asset.yPercent * PDF_HEIGHT;
+        const width = asset.widthPercent * PDF_WIDTH;
+        const height = asset.heightPercent * PDF_HEIGHT;
+
+        if (asset.type === EditType.TEMPLATE_INITIAL && asset.value) {
+          doc.setFontSize(12);
+          doc.text(asset.value, x, y + height / 2);
+        } else if (asset.type === EditType.TEMPLATE_SIGN && asset.value) {
+          try {
+            await doc.addImage(asset.value, "PNG", x, y, width, height);
+          } catch (err) {
+            console.warn(`Failed to load signature image for asset on page ${pageNum}: ${err instanceof Error ? err.message : "Unknown error"}`);
+            doc.rect(x, y, width, height, "S");
+          }
+        } else if (asset.type === EditType.TEMPLATE_DATE && asset.value) {
+          doc.setFontSize(10);
+          doc.text(asset.value, x, y + height / 2);
+        }
+      }
+    }
+
+    doc.save("document_with_overlays.pdf");
+  } catch (err) {
+    throw new Error(`Failed to generate PDF: ${err instanceof Error ? err.message : "Unknown error"}`);
+  }
+}
+

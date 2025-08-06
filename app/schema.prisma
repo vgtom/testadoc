@@ -11,7 +11,7 @@ model User {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
 
-  email    String? @unique
+  email    String  @unique
   username String? @unique
   isAdmin  Boolean @default(false)
 
@@ -29,6 +29,7 @@ model User {
   documents           Document[]
   templates           Template[]
   contacts            Contact[]
+  AuditLog            AuditLog[]
 }
 
 model GptResponse {
@@ -67,11 +68,7 @@ model File {
   uploadUrl String
 }
 
-enum Status {
-  Draft
-  Sent
-  Signed
-}
+
 
 enum AssetType {
   TEXT
@@ -91,7 +88,6 @@ model Document {
 
   name   String
   key    String @default("")
-  status Status @default(Draft)
   url    String
 
   placedAssets PlacedAsset[]
@@ -119,6 +115,13 @@ model PlacedAsset {
   recipientId String?
 }
 
+
+enum TemplateStatus {
+  Draft
+  Sent
+  Completed
+}
+
 model Template {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
@@ -127,14 +130,22 @@ model Template {
   userId String
 
   name   String
-  status Status @default(Draft)
+  status TemplateStatus @default(Draft)
 
   placedAssets PlacedAsset[]
 
-  document   Document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  documentId String?
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String
 
   recipients Recipient[]
+  AuditLog   AuditLog[]
+}
+
+enum RecipientStatus {
+  Draft
+  Recieved
+  Viewed
+  Finished
 }
 
 model Recipient {
@@ -142,7 +153,7 @@ model Recipient {
   createdAt DateTime @default(now())
 
   color  String?
-  status Status  @default(Draft)
+  status RecipientStatus  @default(Draft)
 
   contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
   contactId String
@@ -151,6 +162,7 @@ model Recipient {
   templateId String
 
   placedAssets PlacedAsset[]
+  AuditLog     AuditLog[]
 }
 
 model Contact {
@@ -163,6 +175,21 @@ model Contact {
   userId String?
 
   recipients Recipient[]
+}
+
+model AuditLog {
+  id                String     @id @default(uuid())
+  createdAt         DateTime   @default(now())
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  tag               String?
+  actionType        String
+  actionDescription String?
+  template          Template?  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId        String
+  recipient         Recipient? @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId       String?
+  ipAddress         String?
 }
 
 model DailyStats {

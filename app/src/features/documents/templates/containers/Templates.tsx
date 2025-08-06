@@ -15,7 +15,7 @@ import { cn } from "../../../../lib/utils";
 import { useDrop } from "react-dnd";
 import { Template, type Document } from "wasp/entities";
 import { DocumentCard } from "../../components/DocListCard";
-import { TemplateListCard } from "../components/TemltListCard";
+import { TemplateListCard } from "../components/TemListCard";
 
 // DnD item type for file
 const FILE = "FILE";
@@ -176,7 +176,7 @@ export default function TemplatesContainer() {
       onDragOver={(e) => e.preventDefault()}
     >
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">My Templates</h2>
+        
         <div className="flex gap-2 items-center">
           <Button
             onClick={handleUploadClick}

@@ -174,7 +174,7 @@ export default function DocumentsContainer() {
       onDragOver={(e) => e.preventDefault()}
     >
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">Uploaded Documents</h2>
+        
         <div className="flex gap-2 items-center">
           <Button
             onClick={handleUploadClick}

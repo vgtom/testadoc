@@ -1,7 +1,7 @@
-import { HttpError } from 'wasp/server';
-import { type GetTemplateById } from 'wasp/server/operations';
-import type { Template, Document, PlacedAsset, Recipient } from 'wasp/entities';
-import { CompleteTemplateObject } from '../../types';
+import { HttpError } from "wasp/server";
+import { type GetTemplateById } from "wasp/server/operations";
+import type { Template, Document, PlacedAsset, Recipient } from "wasp/entities";
+import { CompleteTemplateObject } from "../../types";
 
 export const getTemplateById: GetTemplateById<
   { id: string | undefined },
@@ -22,7 +22,7 @@ export const getTemplateById: GetTemplateById<
           placedAssets: true,
         },
       },
-      recipients: true,
+      recipients: { include: { contact: true } },
     },
   });
 

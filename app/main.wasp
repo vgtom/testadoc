@@ -69,6 +69,10 @@ app OpenSaaS {
       email: "me@example.com"
     },
   },
+
+  server: {
+    middlewareConfigFn: import { middlewareConfig } from "@src/server/middlewareConfig"
+  }
 }
 
 //#region Document
@@ -121,7 +125,7 @@ query getDownloadDocumentSignedURL {
 
 query getDownloadDocumentSignedURLByDocId {
   fn: import { getDownloadDocumentSignedURLByDocId } from "@src/features/documents/queries/getDownloadDocumentSignedURLByDocId",
-  entities: [Document, User]
+  entities: [Document, User, Recipient]
 }
 
 query getPlacedAssetsByDocumentId {
@@ -131,6 +135,11 @@ query getPlacedAssetsByDocumentId {
 //#endregion
 
 //#region Template
+route SubmissionPreviewRoute { path: "/submissions/:templateId", to: SubmissionPreviewPage }
+page SubmissionPreviewPage {
+  component: import SubmissionPreviewPage from "@src/all-pages/SubmissionPreviewPage"
+}
+
 route TemplatesRoute { path: "/templates", to: TemplatesPage }
 page TemplatesPage {
   component: import TemplatesPage from "@src/all-pages/TemplatesPage"
@@ -140,6 +149,7 @@ route TemplateEditorRoute { path: "/template_editor/:templateId", to: TemplateEd
 page TemplateEditorPage {
   component: import TemplateEditorPage from "@src/all-pages/TemltEditorPage"
 }
+
 
 // Template Actions
 action createPlacedAssetsByTemplateId {
@@ -180,7 +190,13 @@ query getAllTemplates {
 
 query getTemplateById {
   fn: import { getTemplateById } from "@src/features/documents/templates/queries/getTemplateById",
-  entities: [Template, Document, PlacedAsset, Recipient, User]
+  entities: [Template, Document, Recipient, User]
+}
+
+// main.wasp (in the Template section)
+query getAllTemplateSubmissions {
+  fn: import { getAllTemplateSubmissions } from "@src/features/documents/templates/queries/getAllTemplateSubmissions",
+  entities: [Template, PlacedAsset, Document, Recipient, Contact, User]
 }
 
 query getPlacedAssetsByTemplateId {
@@ -192,7 +208,42 @@ query getRecipientsByTemplateId {
   fn: import { getRecipientsByTemplateId } from "@src/features/documents/templates/queries/getRecipientsByTemplateId",
   entities: [Template, Recipient, Contact, User]
 }
+
+query getTemplateByRecipientId {
+  fn: import { getTemplateByRecipientId } from "@src/features/documents/templates/queries/getTemplateByRecipientId.js",
+  entities: [Template, Recipient, PlacedAsset, Document],
+}
 //#endregion
+
+//#region Signing
+
+route SubmissionsRoute { path: "/submissions", to: SubmissionsPage }
+page SubmissionsPage {
+  component: import SubmissionsPage from "@src/all-pages/SubmissionsPage"
+}
+
+route SignRequestsRoute { path: "/template_sign_requests", to: SignRequestsPage }
+page SignRequestsPage {
+  component: import SignRequestsPage from "@src/all-pages/SignRequestsPage"
+}
+
+route SignRoute { path: "/template_signer/:recipientId", to: SignPage }
+page SignPage {
+  component: import SignPage from "@src/all-pages/SignPage"
+}
+
+action updatePlacedAssetsValuesByRecipientId {
+  fn: import { updatePlacedAssetsValuesByRecipientId } from "@src/features/documents/signing/operations/updatePlacedAssetsValuesByRecipientId",
+  entities: [PlacedAsset, Recipient, Contact, Template],
+}
+
+query getAllSignRequestedTemplates {
+  fn: import { getAllSignRequestedTemplates } from "@src/features/documents/templates/queries/getAllSignRequestedTemplates",
+  entities: [User, Contact, Recipient, Template]
+}
+
+//#endregion
+
 
 //#region Contact
 
@@ -228,6 +279,21 @@ action deleteContact {
   fn: import { deleteContact } from "@src/features/contacts/operations/deleteContact",
   entities: [Contact, Recipient, User]
 }
+
+// #region Common
+
+query getAuditLogByTemplateId {
+  fn: import { getAuditLogByTemplateId } from "@src/features/common/server/audit/getAuditLogByTemplateId",
+  entities: [AuditLog, Template]
+}
+
+
+action createAuditLog { 
+  fn: import { createAuditLog } from "@src/features/common/server/audit/createAuditLog", 
+  entities: [AuditLog, User, Template, ] 
+}
+
+//#endregion
 
 
 //#endregion

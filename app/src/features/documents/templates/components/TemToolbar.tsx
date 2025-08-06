@@ -3,6 +3,7 @@ import {
   Download,
   EllipsisVertical,
   Save,
+  Send,
   Signature,
   Text,
 } from "lucide-react";
@@ -10,9 +11,9 @@ import React, { FC, useCallback, useEffect, useState } from "react";
 import { Button } from "../../../../components/ui/button";
 import { PDFDocument } from "pdf-lib";
 import {
-  createDocument,
   createPlacedAssetsByTemplateId,
   getRecipientsByTemplateId,
+  updateRecipient,
   updateTemplate,
   useQuery,
 } from "wasp/client/operations";
@@ -25,10 +26,10 @@ import {
   PlacedObject,
   RecipientWithContact,
 } from "../../types";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { Recipient } from "wasp/entities";
 import { Pencil, Trash2 } from "lucide-react";
-import { updateRecipient, deleteRecipient } from "wasp/client/operations"; // ✅ Add these
+import { deleteRecipient } from "wasp/client/operations"; // ✅ Add these
 import { uploadDocumentWithProgress } from "../../documentUploading";
 
 const templateAssetTools: Asset[] = [
@@ -68,6 +69,8 @@ type DocTemplateEditorToolbarProp = {
     url: string;
     file: File | null;
   };
+  onSendForSignClick?: () => void;
+  isReadOnly?: boolean;
 };
 
 const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
@@ -81,6 +84,8 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
   activeRecipient,
   setActiveRecipient,
   updatedFileAndUrl,
+  onSendForSignClick,
+  isReadOnly,
 }) => {
   const [showSignRecipientForm, setShowSignRecipientForm] = useState(false);
   const [editRecipient, setEditRecipient] =
@@ -96,7 +101,9 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
     setPlacedImages((prev) =>
       prev.map((obj) => {
         const recipient = recipients.find((r) => r.id === obj.recipientId);
-        return recipient ? { ...obj, color: recipient.color || undefined } : obj;
+        return recipient
+          ? { ...obj, color: recipient.color || undefined }
+          : obj;
       })
     );
   }, [recipients, setPlacedImages]);
@@ -112,11 +119,19 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
   }, []);
 
   const handleEditClick = (recipient: RecipientWithContact) => {
+    if (isReadOnly) {
+      toast.error("You can't modify already sent templates");
+      return;
+    }
     setEditRecipient(recipient);
     setShowSignRecipientForm(true);
   };
 
   const handleDeleteClick = async (recipientId: string) => {
+    if (isReadOnly) {
+      toast.error("You can't modify already sent templates");
+      return;
+    }
     if (!confirm("Are you sure you want to delete this recipient?")) return;
     try {
       await deleteRecipient({ recipientId });
@@ -131,15 +146,25 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
     }
   };
 
-  const handleAssetDragStart = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, assetId: string) => {
-      e.dataTransfer.setData("text/plain", `asset:${assetId}`);
-      e.dataTransfer.effectAllowed = "move";
-    },
-    []
-  );
+  const handleAssetDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    assetId: string
+  ) => {
+    if (isReadOnly) {
+      toast.error("You can't modify already sent templates");
+      return;
+    }
+    e.dataTransfer.setData("text/plain", `asset:${assetId}`);
+    e.dataTransfer.effectAllowed = "move";
+  };
 
-  const handleAddSignRecipientClick = () => setShowSignRecipientForm(true);
+  const handleAddSignRecipientClick = () => {
+    if (isReadOnly) {
+      toast.error("You can't modify already sent templates");
+      return;
+    }
+    setShowSignRecipientForm(true);
+  };
 
   const exportAsJSON = useCallback(async () => {
     try {
@@ -214,6 +239,10 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
   }, [placedImages, assets, fileUrl]);
 
   const saveToDB = useCallback(async () => {
+    if (isReadOnly) {
+      toast.error("You can't modify already sent templates");
+      return;
+    }
     if (!template?.documentId) {
       toast.error("Template and document required");
       return;
@@ -263,6 +292,32 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
       toast.error("Error saving to database");
     }
   }, [template, placedImages, assets, updatedFileAndUrl]);
+
+  const handleSendForSignClick = () => {
+    if (
+      !confirm(
+        "You won't be able to make anychanges to the template after sending for sign. Are you sure to send?"
+      )
+    )
+      return;
+    if (!template?.id) {
+      toast.error("Template ID not set.");
+      return;
+    }
+    if (!recipients?.[0].id) return;
+    onSendForSignClick?.();
+    saveToDB().then(() => {
+      updateRecipient({
+        recipientId: recipients?.[0].id,
+        status: "Recieved",
+      }).then(() => {
+        toast.success("Sent to first recipient for sign...");
+      });
+      updateTemplate({ templateId: template.id, status: "Sent" }).then(() => {
+        toast.success("Sent for sign...");
+      });
+    });
+  };
 
   return (
     <>
@@ -362,23 +417,26 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
         </div>
 
         <div className="mb-6 h-fit">
-          <h3 className="font-semibold mb-3 text-gray-700">Export Options</h3>
           <div className="space-y-2">
-            <Button
+            {/* <Button
               onClick={exportAsJSON}
-              // disabled={placedImages.length === 0}
               className="w-full flex bg-gray-600"
             >
               <Download size={18} /> Export as JSON
+            </Button> */}
+
+            <Button
+              onClick={handleSendForSignClick}
+              disabled={isReadOnly}
+              className="w-full flex bg-gray-800"
+            >
+              <Send size={18} /> Send for sign
             </Button>
             <Button
-              onClick={exportAsPDF}
-              // disabled={placedImages.length === 0}
-              className="w-full flex bg-gray-600"
+              onClick={saveToDB}
+              className="w-full flex bg-gray-800"
+              disabled={isReadOnly}
             >
-              <Download size={18} /> Export as PDF
-            </Button>
-            <Button onClick={saveToDB} className="w-full flex bg-gray-800">
               <Save size={18} /> Save
             </Button>
           </div>

@@ -9,7 +9,7 @@ import { Trash, Plus, Upload, Download } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 
 type PdfPaginationProps = {
-  doc: (Document & { placedAssets?: PlacedAsset[] }) | null;
+  doc: (Document & { placedAssets?: PlacedAsset[] | null }) | null;
   fileUrl: string | null;
   handlePageClick: (pagenum: number) => void;
   setPages: React.Dispatch<React.SetStateAction<PageData[]>>;
@@ -22,6 +22,7 @@ type PdfPaginationProps = {
       file: File | null;
     }>
   >;
+  readonly?: boolean
 };
 
 function reorderPages<T>(list: T[], startIndex: number, endIndex: number): T[] {
@@ -40,6 +41,7 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
   placedObjects,
   setPlacedObjects,
   setUpdatedFileAndUrl,
+  readonly
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -363,6 +365,7 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
             >
               {index > 0 && (
                 <button
+                  disabled={readonly}
                   onClick={(e) => {
                     e.stopPropagation();
                     movePage(index, -1);
@@ -411,6 +414,7 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
 
               {index < pages.length - 1 && (
                 <button
+                  disabled={readonly}
                   onClick={(e) => {
                     e.stopPropagation();
                     movePage(index, 1);
@@ -437,6 +441,7 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
 
               {pages.length !== 1 && (
                 <button
+                  disabled={readonly}
                   onClick={(e) => {
                     e.stopPropagation();
                     deletePage(index);
@@ -452,7 +457,7 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
           
             <Button
               onClick={handleFileSelect}
-              disabled={isAddingPages}
+              disabled={isAddingPages || readonly}
               className="text-sm p-2"
               title="Add pages from PDF"
               size={'sm'}

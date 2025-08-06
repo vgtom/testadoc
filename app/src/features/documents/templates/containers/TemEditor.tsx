@@ -12,7 +12,7 @@ import { Recipient } from "wasp/entities";
 import toast from "react-hot-toast";
 import PdfEdittablePagination from "../../components/PdfEdittablePagination";
 import { PlacedObjectComponent } from "../../components/PlacedObject";
-import TemplateEditorToolbar from "../components/TemplateToolbar";
+import TemplateEditorToolbar from "../components/TemToolbar";
 import PdfPage from "../../components/PdfPage";
 
 type TemplateEditorProps = {
@@ -43,6 +43,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
     url: string;
     file: File | null;
   }>({ url: "", file: null });
+  const [isReadOnly, setIsReadOnly] = useState(true);
 
   useEffect(() => {
     if (template && template.placedAssets) {
@@ -66,9 +67,21 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           pageNumber: i.pageNumber,
           color: i.recipient?.color || "transparent",
           recipientId: i.recipientId!,
+          value:
+            template.status === "Sent" || template.status === "Completed"
+              ? i.value
+              : "",
         }))
       );
     }
+  }, [template]);
+
+  useEffect(() => {
+    if (
+      template && template?.status !== "Sent" &&
+      template?.status !== "Completed"
+    )
+      setIsReadOnly(false);
   }, [template]);
 
   useEffect(() => {
@@ -129,6 +142,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>, pageNumber: number) => {
       e.preventDefault();
+      if (isReadOnly) {
+        toast.error("Read-only mode!");
+      }
       const data = e.dataTransfer.getData("text/plain");
       console.log(data);
 
@@ -192,7 +208,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         setSelectedImage(imageId);
       }
     },
-    [assets, placedObjects, pixelsToPercent, width, pageHeight, activeRecipient]
+    [assets, placedObjects, pixelsToPercent, width, pageHeight, activeRecipient, isReadOnly]
   );
 
   const handleDeleteAsset = (assetId: string) =>
@@ -206,13 +222,14 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
       {/* Pagination now contains all the reorder logic */}
       <PdfEdittablePagination
         setUpdatedFileAndUrl={setUpdatedFileAndUrl}
-        doc={template?.document}
+        doc={template.document}
         fileUrl={fileUrl}
         handlePageClick={handlePageClick}
         pages={pages}
         setPages={setPages}
         placedObjects={placedObjects}
         setPlacedObjects={setPlacedObjects}
+        readonly={isReadOnly}
       />
 
       <div className="flex-1 p-6 overflow-auto ">
@@ -240,25 +257,6 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
             ref={containerRef}
           >
             {template && (
-              // <div ref={containerRef} className="relative"   onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, activePage)}>
-              //   <PdfPage fileUrl={fileUrl || ""} pageNumber={activePage} width={width} />
-              //   {placedObjects
-              //     .filter((img) => img.pageNumber === activePage)
-              //     .map((placedAsset) => (
-              //       <PlacedObjectComponent
-              //         key={placedAsset.id}
-              //         placedAsset={placedAsset}
-              //         containerRef={containerRef}
-              //         asset={assets.find((a) => a.id === placedAsset.assetId)}
-              //         pageWidth={width}
-              //         pageHeight={pageHeight}
-              //         isSelected={selectedImage === placedAsset.id}
-              //         setSelectedObject={setSelectedImage}
-              //         updateObjectPosition={updateImagePosition}
-              //         onDelete={handleDeleteAsset}
-              //       />
-              //     ))}
-              // </div>
               <PdfDocument
                 file={updatedFileAndUrl.url || fileUrl}
                 onLoadSuccess={handleLoadSuccess}
@@ -298,6 +296,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                           setSelectedObject={setSelectedImage}
                           updateObjectPosition={updateImagePosition}
                           onDelete={handleDeleteAsset}
+                          isReadOnly={isReadOnly}
                         />
                       ))}
                   </div>
@@ -319,6 +318,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         setShowDrawingPanel={setShowDrawingPanel}
         activeRecipient={activeRecipient}
         setActiveRecipient={setActiveRecipient}
+        onSendForSignClick={() => setIsReadOnly(true)}
+        isReadOnly={isReadOnly}
       />
     </div>
   );

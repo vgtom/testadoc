@@ -24,13 +24,13 @@ export default function App() {
     : appNavigationItems;
 
   const noNavRoutes = useMemo(
-    () => [routes.LoginRoute.build(), routes.SignupRoute.build()],
+    () => ["/login", "/signup", "/template_signer"],
     []
   );
 
   const shouldDisplayAppNavBar = useMemo(() => {
-    return !noNavRoutes.includes(location.pathname);
-  }, [location]);
+    return !noNavRoutes.some((route) => location.pathname.startsWith(route));
+  }, [location.pathname]);
 
   const isAdminDashboard = useMemo(() => {
     return location.pathname.startsWith("/admin");

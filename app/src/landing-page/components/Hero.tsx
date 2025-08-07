@@ -1,4 +1,4 @@
-import openSaasBannerWebp from '../../client/static/open-saas-banner.webp';
+import heroImage from '../../client/static/heroimage.png';
 import { DocsUrl } from '../../shared/common';
 
 export default function Hero() {
@@ -10,7 +10,8 @@ export default function Hero() {
         <div className='mx-auto max-w-8xl px-6 lg:px-8'>
           <div className='lg:mb-18 mx-auto max-w-3xl text-center'>
             <h1 className='text-4xl font-bold text-gray-900 sm:text-6xl dark:text-white'>
-              Some <span className='italic'>cool</span> words about your product
+              Jurito Signs <br />  Fast and secure
+              
             </h1>
             <p className='mt-6 mx-auto max-w-2xl text-lg leading-8 text-gray-600 dark:text-white'>
               With some more exciting words about your product!
@@ -27,7 +28,7 @@ export default function Hero() {
           <div className='mt-14 flow-root sm:mt-14'>
             <div className='-m-2  flex justify-center rounded-xl lg:-m-4 lg:rounded-2xl lg:p-4'>
               <img
-                src={openSaasBannerWebp}
+                src={heroImage}
                 alt='App screenshot'
                 width={1000}
                 height={530}

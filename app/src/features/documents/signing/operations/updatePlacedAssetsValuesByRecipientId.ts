@@ -26,7 +26,6 @@ export const updatePlacedAssetsValuesByRecipientId: UpdatePlacedAssetsValuesByRe
   UpdatePayload,
   PlacedAsset[]
 > = async ({ updates, shouldSendToNextRecipient }, context) => {
-  if (!context.user) throw new HttpError(401, "Unauthorized");
 
   inputSchema.parse({ updates, shouldSendToNextRecipient });
 
@@ -42,8 +41,8 @@ export const updatePlacedAssetsValuesByRecipientId: UpdatePlacedAssetsValuesByRe
     include: { contact: true, template: { include: { user: true } } },
   });
 
-  if (!recipient || recipient.contact.email !== context.user.email || !context.user) {
-    throw new HttpError(403, "You are not authorized to update these fields");
+  if (!recipient) {
+    throw new HttpError(404, "Recipient not found!")
   }
 
   const validAssets = await context.entities.PlacedAsset.findMany({
@@ -126,10 +125,6 @@ export const updatePlacedAssetsValuesByRecipientId: UpdatePlacedAssetsValuesByRe
             templateId: template.id,
             recipientId,
             tag: AuditLogTag.TEMPLATE_FLOW,
-
-          },
-          {
-            user: context.user,
           }
         );
       } else {
@@ -151,9 +146,6 @@ export const updatePlacedAssetsValuesByRecipientId: UpdatePlacedAssetsValuesByRe
               templateId: template.id,
               recipientId: nextRecipient.id,
               tag: AuditLogTag.TEMPLATE_FLOW,
-            },
-            {
-              user: context.user,
             }
           );
 

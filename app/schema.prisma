@@ -180,8 +180,8 @@ model Contact {
 model AuditLog {
   id                String     @id @default(uuid())
   createdAt         DateTime   @default(now())
-  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
+  user              User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String?
   tag               String?
   actionType        String
   actionDescription String?

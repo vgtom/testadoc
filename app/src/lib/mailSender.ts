@@ -1,5 +1,7 @@
 // const nodemailer = require('nodemailer');
 import nodemailer from "nodemailer";
+import { env } from "wasp/server";
+import { emailSender } from "wasp/server/email";
 
 export const transporter = nodemailer.createTransport({
   host: "localhost",
@@ -18,10 +20,19 @@ export const sendMail = async ({
   subject: string;
   text: string;
 }) => {
-  transporter.sendMail({
-    from,
-    to,
-    subject,
-    text,
-  });
+  // if (env.NODE_ENV === "development")
+  //   transporter.sendMail({
+  //     from,
+  //     to,
+  //     subject,
+  //     text,
+  //   });
+  // else
+    emailSender.send({
+      from: { email: "info@getjurito.com" },
+      html: text,
+      subject,
+      text,
+      to,
+    });
 };

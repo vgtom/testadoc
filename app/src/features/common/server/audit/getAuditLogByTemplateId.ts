@@ -13,7 +13,7 @@ export type GetAuditLogByTemplateIdInput = {
 };
 
 export type GetAuditLogByTemplateIdOutput = (AuditLog & {
-  user: { id: string; email: string };
+  user: { id: string; email: string } | null;
   recipient: (Recipient & { contact: Contact | null }) | null;
 })[];
 

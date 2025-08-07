@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
-  createAuditLog,
   getDownloadDocumentSignedURLByDocId,
   getTemplateByRecipientId,
   updatePlacedAssetsValuesByRecipientId,
   updateRecipient,
-  useQuery,
+  useQuery
 } from "wasp/client/operations";
 import { Asset, EditType, PlacedObject } from "../../types";
 import { Page, Document as PdfDocument } from "react-pdf";
@@ -14,8 +13,6 @@ import { Button } from "../../../../components/ui/button";
 import { PlacedObjectComponent } from "../../components/PlacedObject";
 import TemplateDrawer from "../components/TemplateSignDrawer";
 import toast from "react-hot-toast";
-import { AuditLogActionType } from "wasp/src/features/common/server/audit/auditTypes";
-import { AuditLogTag } from "../../../common/server/audit/auditTypes";
 
 export const TemplateSigner: React.FC = () => {
   const { recipientId } = useParams<{ recipientId: string }>();
@@ -42,10 +39,15 @@ export const TemplateSigner: React.FC = () => {
   const isRecipientFinished =
     template?.recipients?.find((r) => r.id === recipientId)?.status ===
     "Finished";
+
   useEffect(() => {
     if (!recipientId) return;
     updateRecipient({ recipientId: recipientId, status: "Viewed" });
   }, [recipientId]);
+
+  useEffect(() => {
+    if (!placedObjects.some((i) => !i.value)) setIsDrawerOpen(false);
+  }, [placedObjects])
 
   useEffect(() => {
     console.log(placedObjects.map((i) => ({ id: i.id, value: i.value || "" })));
@@ -209,13 +211,14 @@ export const TemplateSigner: React.FC = () => {
     }
   };
 
+
+
   const handleValueChange = (value: string) => {
     if (!selectedObject || isRecipientFinished) return; // Prevent changes if recipient is Signed
     setPlacedObjects((prev) =>
       prev.map((obj) => (obj.id === selectedObject ? { ...obj, value } : obj))
     );
     setInputValue(value);
-    if (value) setIsDrawerOpen(false);
   };
 
   if (isLoading || loading) {

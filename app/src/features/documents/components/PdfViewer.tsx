@@ -106,7 +106,7 @@ export const PdfViewer: FC<PdfViewerProps> = ({
 
   return (
     <div
-      ref={containerRef}
+      
       className="bg-white rounded-lg shadow-lg p-6 relative max-w-full overflow-x-auto"
     >
       {isLoading && (
@@ -127,6 +127,7 @@ export const PdfViewer: FC<PdfViewerProps> = ({
 
       {fileUrl && (
         <div
+        ref={containerRef}
           className={`transition-opacity duration-300 ${
             isLoading ? "opacity-70" : "opacity-100"
           }`}
@@ -135,7 +136,7 @@ export const PdfViewer: FC<PdfViewerProps> = ({
             file={fileUrl}
             onLoadSuccess={handleLoadSuccess}
             onLoadError={handleLoadError}
-            className="pdf-document"
+            className="pdf-document "
             loading={<div>Loading PDF...</div>}
           >
             {numPages &&
@@ -144,7 +145,7 @@ export const PdfViewer: FC<PdfViewerProps> = ({
                 return (
                   <div
                     key={`page_${pageNumber}`}
-                    className="relative mb-8 last:mb-0"
+                    className="relative mb-8 last:mb-0 mx-auto"
                   >
                     <div className="relative border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                       <Page

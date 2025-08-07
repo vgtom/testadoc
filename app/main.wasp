@@ -63,15 +63,15 @@ app OpenSaaS {
   },
 
   emailSender: {
-    provider: Dummy,
+    provider: SendGrid,
     defaultFrom: {
       name: "Open SaaS App",
-      email: "me@example.com"
+      email: "info@getjurito.com"
     },
   },
 
   server: {
-    middlewareConfigFn: import { middlewareConfig } from "@src/server/middlewareConfig"
+    middlewareConfigFn: import { middlewareConfig } from "@src/server/middlewareConfig",
   }
 }
 
@@ -290,6 +290,7 @@ query getAuditLogByTemplateId {
 
 action createAuditLog { 
   fn: import { createAuditLog } from "@src/features/common/server/audit/createAuditLog", 
+  auth: false,
   entities: [AuditLog, User, Template, ] 
 }
 

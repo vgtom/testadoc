@@ -55,16 +55,13 @@ export const updateRecipient: UpdateRecipient<
     );
     const allOthersDraft = otherRecipients.every((r) => r.status === "Draft");
     if (allOthersDraft && otherRecipients.length >= 0) {
-      await createAuditLog(
-        {
-          actionType: AuditLogActionType.SENT_TO_FIRST_RECIPIENT,
-          actionDescription: `Template ${recipient.template.name} sent to first recipient: ${recipient.contact.email}`,
-          templateId: recipient.templateId,
-          recipientId: recipient.id,
-          tag: AuditLogTag.TEMPLATE_FLOW,
-        },
-        { user }
-      );
+      await createAuditLog({
+        actionType: AuditLogActionType.SENT_TO_FIRST_RECIPIENT,
+        actionDescription: `Template ${recipient.template.name} sent to first recipient: ${recipient.contact.email}`,
+        templateId: recipient.templateId,
+        recipientId: recipient.id,
+        tag: AuditLogTag.TEMPLATE_FLOW,
+      });
     }
 
     await sendMail({
@@ -85,29 +82,23 @@ export const updateRecipient: UpdateRecipient<
   }
 
   if (status === "Viewed" && recipient.status !== "Viewed") {
-    await createAuditLog(
-      {
-        actionType: AuditLogActionType.RECIPIENT_OPENED,
-        actionDescription: `Recipient ${recipient.contact.email} marked as Viewed for template: ${recipient.template.name}`,
-        templateId: recipient.templateId,
-        recipientId: recipient.id,
-        tag: AuditLogTag.TEMPLATE_FLOW,
-      },
-      { user }
-    );
+    await createAuditLog({
+      actionType: AuditLogActionType.RECIPIENT_OPENED,
+      actionDescription: `Recipient ${recipient.contact.email} marked as Viewed for template: ${recipient.template.name}`,
+      templateId: recipient.templateId,
+      recipientId: recipient.id,
+      tag: AuditLogTag.TEMPLATE_FLOW,
+    });
   }
 
   if (status === "Finished") {
-    await createAuditLog(
-      {
-        actionType: AuditLogActionType.ALL_RECIPIENTS_COMPLETED,
-        actionDescription: `Recipient ${recipient.contact.email} marked as Signed for template: ${recipient.template.name}`,
-        templateId: recipient.templateId,
-        recipientId: recipient.id,
-        tag: AuditLogTag.TEMPLATE_FLOW,
-      },
-      { user }
-    );
+    await createAuditLog({
+      actionType: AuditLogActionType.ALL_RECIPIENTS_COMPLETED,
+      actionDescription: `Recipient ${recipient.contact.email} marked as Signed for template: ${recipient.template.name}`,
+      templateId: recipient.templateId,
+      recipientId: recipient.id,
+      tag: AuditLogTag.TEMPLATE_FLOW,
+    });
   }
 
   const updatedRecipient = await context.entities.Recipient.update({

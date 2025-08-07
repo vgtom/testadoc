@@ -6,7 +6,7 @@ import { Dialog } from '@headlessui/react';
 import { BiLogIn } from 'react-icons/bi';
 import { AiFillCloseCircle } from 'react-icons/ai';
 import { HiBars3 } from 'react-icons/hi2';
-import logo from '../../static/logo.webp';
+import logo from '../../static/logo.png';
 import DropdownUser from '../../../user/DropdownUser';
 import { UserMenuItems } from '../../../user/UserMenuItems';
 import DarkModeSwitcher from '../DarkModeSwitcher';
@@ -29,11 +29,11 @@ export default function AppNavBar({ navigationItems }: { navigationItems: Naviga
     <header
       className={cn('absolute inset-x-0 top-0 z-50 dark:bg-boxdark-2', {
         'shadow sticky bg-white bg-opacity-50 backdrop-blur-lg backdrop-filter dark:border dark:border-gray-100/10':
-          !isLandingPage,
-      })}
+          !isLandingPage
+      },isLandingPage ? "sticky top-0 bg-white " : "")}
     >
-      {isLandingPage && <Announcement />}
-      <nav className='flex items-center justify-between p-3 lg:px-8' aria-label='Global'>
+      {/* {isLandingPage && <Announcement />} */}
+      <nav className={cn('flex items-center justify-between p-3 lg:px-8')} aria-label='Global'>
         <div className='flex items-center lg:flex-1'>
           <WaspRouterLink
             to={routes.LandingPageRoute.to}
@@ -41,7 +41,7 @@ export default function AppNavBar({ navigationItems }: { navigationItems: Naviga
           >
             <NavLogo />
             {isLandingPage && (
-              <span className='ml-2 text-sm font-semibold leading-6 dark:text-white'>Your SaaS</span>
+              <span className='ml-2 text-sm font-semibold leading-6 dark:text-white'>Jurito</span>
             )}
           </WaspRouterLink>
         </div>
@@ -58,7 +58,7 @@ export default function AppNavBar({ navigationItems }: { navigationItems: Naviga
         <div className='hidden lg:flex lg:gap-x-12'>{renderNavigationItems(navigationItems)}</div>
         <div className='hidden lg:flex lg:flex-1 gap-3 justify-end items-center'>
           <ul className='flex justify-center items-center gap-2 sm:gap-4'>
-            <DarkModeSwitcher />
+            {/* <DarkModeSwitcher /> */}
           </ul>
           {isUserLoading ? null : !user ? (
             <WaspRouterLink to={routes.LoginRoute.to} className='text-sm font-semibold leading-6 ml-3'>
@@ -105,7 +105,7 @@ export default function AppNavBar({ navigationItems }: { navigationItems: Naviga
                 )}
               </div>
               <div className='py-6'>
-                <DarkModeSwitcher />
+                {/* <DarkModeSwitcher /> */}
               </div>
             </div>
           </div>

@@ -28,7 +28,7 @@ export enum EditType {
 export interface PlacedObject {
   id: string;
   type: EditType;
-  assetId: string;
+  assetId?: string;
   xPercent: number;
   yPercent: number;
   widthPercent: number;

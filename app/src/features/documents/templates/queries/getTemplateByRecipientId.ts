@@ -6,7 +6,6 @@ export const getTemplateByRecipientId: GetTemplateByRecipientId<
   { recipientId: string },
   CompleteTemplateObject
 > = async ({ recipientId }, context) => {
-  if (!context.user) throw new HttpError(401);
 
   // Fetch recipient and ensure email match
   const recipient = await context.entities.Recipient.findUnique({
@@ -16,8 +15,8 @@ export const getTemplateByRecipientId: GetTemplateByRecipientId<
     },
   });
 
-  if (!recipient || recipient.contact?.email !== context.user.email) {
-    throw new HttpError(403, "You are not authorized to view this template");
+  if (!recipient) {
+    throw new HttpError(404, "Recipient not found");
   }
 
   // Fetch template with all required data

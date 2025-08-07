@@ -22,7 +22,7 @@ type PdfPaginationProps = {
       file: File | null;
     }>
   >;
-  readonly?: boolean
+  readonly?: boolean;
 };
 
 function reorderPages<T>(list: T[], startIndex: number, endIndex: number): T[] {
@@ -41,7 +41,7 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
   placedObjects,
   setPlacedObjects,
   setUpdatedFileAndUrl,
-  readonly
+  readonly,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,6 +53,7 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
   }>({});
   const [mergedPdfUrl, setMergedPdfUrl] = useState<string | null>(null);
   const [isAddingPages, setIsAddingPages] = useState(false);
+  const [isMadeSomeEdit, setIsMadeSomeEdit] = useState(false);
 
   useEffect(() => {
     if (!fileUrl || !doc?.id) return;
@@ -70,6 +71,7 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
   }, [fileUrl, doc?.id]);
 
   useEffect(() => {
+    if (!isMadeSomeEdit) return;
     if (pages.length === 0) {
       setMergedPdfUrl(null);
       setUpdatedFileAndUrl({ url: "", file: null });
@@ -93,6 +95,7 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
   }, [pages]);
 
   const generateMergedPdf = async (currentPages: PageData[]) => {
+    if (!isMadeSomeEdit) return;
     try {
       const { url, file } = await pageDataArrayToPdfUrl(currentPages);
       setMergedPdfUrl(url);
@@ -123,7 +126,11 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
             thumbnailUrl || createPlaceholderImage(pageData.pageNumber),
         }));
       } catch (error) {
-        console.error("Error generating thumbnail for page:", pageData.id, error);
+        console.error(
+          "Error generating thumbnail for page:",
+          pageData.id,
+          error
+        );
         setPageImages((prev) => ({
           ...prev,
           [pageData.id]: createPlaceholderImage(pageData.pageNumber),
@@ -207,6 +214,7 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
   };
 
   const movePage = (index: number, direction: 1 | -1) => {
+    setIsMadeSomeEdit(true)
     const targetIndex = index + direction;
     if (targetIndex < 0 || targetIndex >= pages.length) return;
 
@@ -218,13 +226,16 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
   };
 
   const deletePage = (index: number) => {
+    setIsMadeSomeEdit(true)
     const pageIdToDelete = pages[index].id;
 
     setPages((prevPages) => {
       const newPages = prevPages.filter((_, i) => i !== index);
       setPlacedObjects((prev) =>
         prev.filter((obj) => {
-          const oldPage = prevPages.find((p) => p.pageNumber === obj.pageNumber);
+          const oldPage = prevPages.find(
+            (p) => p.pageNumber === obj.pageNumber
+          );
           return oldPage?.id !== pageIdToDelete;
         })
       );
@@ -255,8 +266,8 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
       alert("Please select a PDF file");
       return;
     }
+    setIsMadeSomeEdit(true)
 
-    setIsAddingPages(true);
     try {
       const fileUrl = URL.createObjectURL(file);
       await addPagesFromPdf(fileUrl, file.name);
@@ -272,6 +283,8 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
   };
 
   const addPagesFromPdf = async (pdfUrl: string, fileName: string) => {
+    setIsAddingPages(true);
+
     try {
       const response = await fetch(pdfUrl);
       const pdfBytes = await response.arrayBuffer();
@@ -454,28 +467,27 @@ const PdfEditablePagination: FC<PdfPaginationProps> = ({
               )}
             </div>
           ))}
-          
-            <Button
-              onClick={handleFileSelect}
-              disabled={isAddingPages || readonly}
-              className="text-sm p-2"
-              title="Add pages from PDF"
-              size={'sm'}
-              variant={'outline'}
-            >
-              {isAddingPages ? (
-                <>
-                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <Plus size={10} />
-                  Add Pages
-                </>
-              )}
-            </Button>
-          
+
+          <Button
+            onClick={handleFileSelect}
+            disabled={isAddingPages || readonly}
+            className="text-sm p-2"
+            title="Add pages from PDF"
+            size={"sm"}
+            variant={"outline"}
+          >
+            {isAddingPages ? (
+              <>
+                <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                Adding...
+              </>
+            ) : (
+              <>
+                <Plus size={10} />
+                Add Pages
+              </>
+            )}
+          </Button>
         </div>
       ) : (
         <div className="text-center text-gray-500 p-10">

@@ -9,6 +9,7 @@ type CreateAuditLogInput = {
   recipientId?: string;
   tag?: AuditLogTag;
   ipAddress?: string;
+  userId?: string;
 };
 
 type CreateAuditLogOutput = {
@@ -30,9 +31,6 @@ export const createAuditLog: CreateAuditLog<
   CreateAuditLogInput,
   CreateAuditLogOutput
 > = async (args, context) => {
-  if (!context.user) {
-    throw new HttpError(401, "Unauthorized");
-  }
 
   const {
     actionType,
@@ -41,6 +39,7 @@ export const createAuditLog: CreateAuditLog<
     tag,
     ipAddress,
     recipientId,
+    userId
   } = args;
 
   // Validate input
@@ -66,7 +65,7 @@ export const createAuditLog: CreateAuditLog<
       actionDescription,
       tag,
       ipAddress: ipAddress || (context as any).clientIp,
-      user: { connect: { id: context.user.id } },
+      ...(userId && { user: { connect: { id: userId } } }),
       ...(templateId && { template: { connect: { id: templateId } } }),
       ...(recipientId && { recipient: { connect: { id: recipientId } } }),
     },

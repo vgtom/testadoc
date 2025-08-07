@@ -24,7 +24,7 @@ interface PlacedImageProps {
   onResize?: (id: string, widthPercent: number, heightPercent: number) => void;
   isReadOnly?: boolean;
   isValueEdittable?: boolean;
-  showValue?: boolean
+  showValue?: boolean;
 }
 
 export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
@@ -163,7 +163,7 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     console.log("handleMouseDown triggered for ID:", placedAsset.id);
-    if (isReadOnly && !isValueEdittable) return; // Allow clicks if isValueEdittable is true
+    if (isReadOnly && !isValueEdittable) return;
     if (isResizing) return;
     e.preventDefault();
     e.stopPropagation();
@@ -174,7 +174,6 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
     setSelectedObject(placedAsset.id);
 
     if (!isReadOnly) {
-      // Only allow dragging if not read-only
       const rect = element.getBoundingClientRect();
       start.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       setIsDragging(true);
@@ -233,31 +232,38 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
       let newLeft = startLeft;
       let newTop = startTop;
 
-      if (direction.includes("right")) {
+      if (direction === "bottom-right") {
+        // Only update width and height, keep position fixed
         newWidth = Math.max(50, startWidth + deltaX);
-      }
-      if (direction.includes("left")) {
-        newWidth = Math.max(50, startWidth - deltaX);
-        newLeft = startLeft + (startWidth - newWidth);
-      }
-      if (direction.includes("bottom")) {
         newHeight = Math.max(30, startHeight + deltaY);
-      }
-      if (direction.includes("top")) {
-        newHeight = Math.max(30, startHeight - deltaY);
-        newTop = startTop + (startHeight - newHeight);
+      } else {
+        // Handle other directions as before
+        if (direction.includes("right")) {
+          newWidth = Math.max(50, startWidth + deltaX);
+        }
+        if (direction.includes("left")) {
+          newWidth = Math.max(50, startWidth - deltaX);
+          newLeft = startLeft + (startWidth - newWidth);
+        }
+        if (direction.includes("bottom")) {
+          newHeight = Math.max(30, startHeight + deltaY);
+        }
+        if (direction.includes("top")) {
+          newHeight = Math.max(30, startHeight - deltaY);
+          newTop = startTop + (startHeight - newHeight);
+        }
       }
 
       if (asset?.type === EditType.IMAGE && e.shiftKey) {
         const aspectRatio = startWidth / startHeight;
         if (Math.abs(deltaX) > Math.abs(deltaY)) {
           newHeight = newWidth / aspectRatio;
-          if (direction.includes("top")) {
+          if (direction.includes("top") && direction !== "bottom-right") {
             newTop = startTop + (startHeight - newHeight);
           }
         } else {
           newWidth = newHeight * aspectRatio;
-          if (direction.includes("left")) {
+          if (direction.includes("left") && direction !== "bottom-right") {
             newLeft = startLeft + (startWidth - newWidth);
           }
         }
@@ -278,6 +284,11 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
         newWidth / pageWidth,
         newHeight / pageHeight
       );
+
+      // Update position only if not bottom-right resizing
+      if (direction !== "bottom-right") {
+        debouncedUpdate(placedAsset.id, newLeft / pageWidth, newTop / pageHeight);
+      }
     };
 
     const handleMouseUp = () => {
@@ -334,8 +345,8 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
 
   if (!placedAsset || !asset) return null;
 
-  const objectWidth = asset.type === EditType.IMAGE ? currentWidth : "20%";
-  const objectHeight = asset.type === EditType.IMAGE ? currentHeight : "10%";
+  const objectWidth = currentWidth;
+  const objectHeight = currentHeight;
 
   return (
     <div
@@ -345,7 +356,7 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
       onMouseLeave={() => !isSelected && setShowControls(false)}
       className={`
         absolute group 
-        ${isReadOnly && !isValueEdittable ? "" : "cursor-pointer"}
+        ${isValueEdittable && isReadOnly ? "cursor-pointer" : "cursor-move"}
         ${isDragging ? "scale-[1.02] z-50 shadow-lg" : "z-10"}
         ${isSelected ? "ring-2 ring-blue-500" : ""}
         ${showControls && !isReadOnly ? "hover:ring-1 hover:ring-blue-300" : ""}
@@ -392,12 +403,16 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
         </div>
       )}
 
-      {isSelected && !isReadOnly && onResize && asset.type === EditType.IMAGE && (
+      {isSelected && !isReadOnly && (
         <>
           <div
             onMouseDown={(e) => handleResizeStart(e, "bottom-right")}
-            className="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-600 border-2 border-white rounded-sm cursor-se-resize hover:bg-blue-700 transition-colors shadow-sm pointer-events-auto z-10"
-          />
+            className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-600 border-2 border-white rounded-full cursor-se-resize hover:bg-blue-700 transition-colors shadow-md pointer-events-auto z-20 group/resize"
+          >
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover/resize:opacity-100 transition-opacity duration-150 pointer-events-none">
+              Resize
+            </div>
+          </div>
           <div
             onMouseDown={(e) => handleResizeStart(e, "bottom-left")}
             className="absolute -bottom-1 -left-1 w-3 h-3 bg-blue-600 border-2 border-white rounded-sm cursor-sw-resize hover:bg-blue-700 transition-colors shadow-sm pointer-events-auto z-10"

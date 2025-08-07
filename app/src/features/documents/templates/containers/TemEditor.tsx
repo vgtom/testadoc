@@ -25,6 +25,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   fileUrl,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const pageRef = useRef<HTMLDivElement | null>(null); // Add ref for page element
 
   const [numPages, setNumPages] = useState<number | null>(null);
   const [width, setWidth] = useState<number>(800);
@@ -78,7 +79,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
   useEffect(() => {
     if (
-      template && template?.status !== "Sent" &&
+      template &&
+      template?.status !== "Sent" &&
       template?.status !== "Completed"
     )
       setIsReadOnly(false);
@@ -88,10 +90,13 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
     const updateSize = () => {
       if (!containerRef.current) return;
       const containerWidth = containerRef.current.offsetWidth;
+      console.log(containerRef.current.classList)
       if (containerWidth) {
-        const newWidth = containerWidth - 100;
+        const newWidth = containerWidth
         setWidth(newWidth);
-        setPageHeight(newWidth);
+        
+        // Don't automatically set pageHeight here anymore
+        // Let it be calculated based on actual PDF dimensions
       }
     };
     updateSize();
@@ -105,6 +110,58 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
     },
     []
   );
+
+  // Method 1: Handle page render success to get actual dimensions
+  const handlePageRenderSuccess = useCallback((page: any) => {
+    console.log('Page rendered successfully');
+    
+    // Get the rendered page element
+    const pageElement = pageRef.current?.querySelector('.react-pdf__Page__canvas') as HTMLCanvasElement;
+    if (pageElement) {
+      const actualHeight = pageElement.height * (width / pageElement.width);
+      console.log('Calculated page height:', actualHeight);
+      setPageHeight(actualHeight);
+    }
+  }, [width]);
+
+  // Method 2: Alternative approach using page load success
+  const handlePageLoadSuccess = useCallback((page: any) => {
+    console.log('Page loaded successfully');
+    
+    // Get page dimensions from the PDF page object
+    const { width: pageWidth, height: pageHeightPdf } = page.getViewport({ scale: 1 });
+    
+    // Calculate the scaled height based on our desired width
+    const scaledHeight = (pageHeightPdf / pageWidth) * width;
+    console.log('PDF Page dimensions:', { pageWidth, pageHeightPdf });
+    console.log('Scaled height:', scaledHeight);
+    
+    setPageHeight(scaledHeight);
+  }, [width]);
+
+  // Method 3: Use ResizeObserver to monitor the actual rendered page size
+  useEffect(() => {
+    if (!pageRef.current) return;
+    
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { height } = entry.contentRect;
+        if (height > 0 && height !== pageHeight) {
+          console.log('ResizeObserver detected height:', height);
+          setPageHeight(height);
+        }
+      }
+    });
+    
+    const pageElement = pageRef.current.querySelector('.react-pdf__Page');
+    if (pageElement) {
+      resizeObserver.observe(pageElement);
+    }
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [activePage, width]);
 
   const pixelsToPercent = useCallback(
     (pixelValue: number, totalSize: number): number => {
@@ -171,8 +228,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         const asset = assets.find((a) => a.id === assetId);
         if (!asset) return;
 
-        const initialWidth = 200;
-        const initialHeight = 150;
+        // const initialWidth = 200;
+        // const initialHeight = 150;
 
         const newImage: PlacedObject = {
           id: Date.now().toString(),
@@ -180,8 +237,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           assetId,
           xPercent: pixelsToPercent(x, width),
           yPercent: pixelsToPercent(y, pageHeight),
-          widthPercent: pixelsToPercent(initialWidth, width),
-          heightPercent: pixelsToPercent(initialHeight, pageHeight),
+          widthPercent: .2,
+          heightPercent: .1,
           pageNumber,
           color: activeRecipient?.color || "transparent",
           recipientId: activeRecipient?.id,
@@ -208,7 +265,15 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
         setSelectedImage(imageId);
       }
     },
-    [assets, placedObjects, pixelsToPercent, width, pageHeight, activeRecipient, isReadOnly]
+    [
+      assets,
+      placedObjects,
+      pixelsToPercent,
+      width,
+      pageHeight,
+      activeRecipient,
+      isReadOnly,
+    ]
   );
 
   const handleDeleteAsset = (assetId: string) =>
@@ -253,7 +318,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           )}
 
           <div
-            className="bg-white rounded-lg shadow-lg p-6 relative "
+            className="bg-white rounded-lg shadow-lg w-full relative  "
+
             ref={containerRef}
           >
             {template && (
@@ -268,6 +334,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   className={`relative mb-8 last:mb-0 cursor-pointer w-fit`}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, activePage)}
+                  ref={pageRef} // Add ref here
                 >
                   <div className="relative border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                     <Page
@@ -276,8 +343,19 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                       renderTextLayer={false}
                       renderAnnotationLayer={false}
                       className="pdf-page w-fit m-auto"
+                      onRenderSuccess={handlePageRenderSuccess} // Method 1
+                      onLoadSuccess={handlePageLoadSuccess}     // Method 2
                     />
-                    <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm">
+                    {/* Remove the fixed red overlay and use actual page height */}
+                    {/* <div 
+                      className="bg-red-400 h-full top-0 left-0 z-80 absolute" 
+                      style={{
+                        width: width - 10, 
+                        height: pageHeight // This will now use the actual calculated height
+                      }}
+                    >
+                    </div> */}
+                    <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
                       Page {activePage}
                     </div>
                     {placedObjects

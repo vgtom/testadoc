@@ -20,14 +20,14 @@ export const sendMail = async ({
   subject: string;
   text: string;
 }) => {
-  // if (env.NODE_ENV === "development")
-  //   transporter.sendMail({
-  //     from,
-  //     to,
-  //     subject,
-  //     text,
-  //   });
-  // else
+  if (env.NODE_ENV === "development")
+    transporter.sendMail({
+      from,
+      to,
+      subject,
+      text,
+    });
+  else
     emailSender.send({
       from: { email: "info@getjurito.com" },
       html: text,

@@ -1,14 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { 
-  FileSignature, 
-  Brain, 
-  Lock, 
-  Clock, 
-  Search, 
-  Users, 
-  BarChart3, 
-  Workflow,
-  CheckCircle
+import {
+  FileSignature, Lock, Users, CheckCircle
 } from "lucide-react";
 
 const Features = () => {
@@ -67,16 +59,16 @@ const Features = () => {
         </div>
 
         {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
+        <div className="grid md:grid-cols-2  gap-8 mb-20 justify-center items-center max-w-[1200px] m-auto ">
           {features.map((feature, index) => (
-            <Card key={index} className="bg-gradient-card border-0 shadow-card hover:shadow-glow transition-all duration-300 group bg-orange-100">
+            <Card key={index} className="  bg-gradient-card border shadow-card hover:shadow-glow transition-all duration-300 group bg-[#6dbef42a] border-[#6dbdf4]">
               <CardHeader>
                 <div className="w-12 h-12 bg-gradient-accent rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <feature.icon color="black" className="w-6 h-6 text-white" />
+                  <feature.icon color="black" className="w-10 h-10 text-white" />
                 </div>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl text-foreground">{feature.title}</CardTitle>
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium bg-orange-600 text-white">
+                  <CardTitle className="text-3xl text-foreground">{feature.title}</CardTitle>
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium bg-[#1e6a9d] text-white">
                     {feature.highlight}
                   </span>
                 </div>

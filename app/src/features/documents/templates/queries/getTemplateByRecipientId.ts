@@ -24,7 +24,6 @@ export const getTemplateByRecipientId: GetTemplateByRecipientId<
     where: { id: recipient.templateId },
     include: {
       placedAssets: {
-        where: { recipientId },
         include: { recipient: true },
       },
       document: {

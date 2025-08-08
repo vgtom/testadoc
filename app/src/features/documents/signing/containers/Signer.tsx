@@ -5,7 +5,7 @@ import {
   getTemplateByRecipientId,
   updatePlacedAssetsValuesByRecipientId,
   updateRecipient,
-  useQuery
+  useQuery,
 } from "wasp/client/operations";
 import { Asset, EditType, PlacedObject } from "../../types";
 import { Page, Document as PdfDocument } from "react-pdf";
@@ -13,10 +13,12 @@ import { Button } from "../../../../components/ui/button";
 import { PlacedObjectComponent } from "../../components/PlacedObject";
 import TemplateDrawer from "../components/TemplateSignDrawer";
 import toast from "react-hot-toast";
+import { PdfViewer } from "../../components/PdfViewer";
 
 export const TemplateSigner: React.FC = () => {
   const { recipientId } = useParams<{ recipientId: string }>();
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const pageRef = useRef<HTMLDivElement | null>(null);
 
   const [width, setWidth] = useState<number>(800);
   const [pageHeight, setPageHeight] = useState<number>(1000);
@@ -46,8 +48,8 @@ export const TemplateSigner: React.FC = () => {
   }, [recipientId]);
 
   useEffect(() => {
-    if (!placedObjects.some((i) => !i.value)) setIsDrawerOpen(false);
-  }, [placedObjects])
+    if (!placedObjects.filter(i => i.recipientId === recipientId).some((i) => !i.value)) setIsDrawerOpen(false);
+  }, [placedObjects]);
 
   useEffect(() => {
     console.log(placedObjects.map((i) => ({ id: i.id, value: i.value || "" })));
@@ -75,12 +77,17 @@ export const TemplateSigner: React.FC = () => {
   }, [template?.id]);
 
   useEffect(() => {
+    setIsDrawerOpen(true);
+  }, [selectedObject]);
+
+  useEffect(() => {
     const updateSize = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || !pageRef.current) return;
       const containerWidth = containerRef.current.offsetWidth;
-      const newWidth = containerWidth - 100;
+      const pageHeight = pageRef.current.offsetHeight;
+      const newWidth = containerWidth;
       setWidth(newWidth);
-      setPageHeight(newWidth); // assuming square aspect ratio
+      setPageHeight(pageHeight); // assuming square aspect ratio
     };
     updateSize();
     window.addEventListener("resize", updateSize);
@@ -172,6 +179,7 @@ export const TemplateSigner: React.FC = () => {
     ];
     const editableObjects = placedObjects
       .filter((obj) => editableTypes.includes(obj.type))
+      .filter(obj => obj.recipientId === recipientId)
       .sort((a, b) => a.pageNumber - b.pageNumber || a.id.localeCompare(b.id));
 
     const currentIndex = editableObjects.findIndex(
@@ -210,8 +218,6 @@ export const TemplateSigner: React.FC = () => {
       setIsDrawerOpen(true);
     }
   };
-
-
 
   const handleValueChange = (value: string) => {
     if (!selectedObject || isRecipientFinished) return; // Prevent changes if recipient is Signed
@@ -266,7 +272,7 @@ export const TemplateSigner: React.FC = () => {
         <Button
           variant="default"
           onClick={handleSaveAndSendToNext}
-          disabled={isRecipientFinished || placedObjects.some((i) => !i.value)}
+          disabled={isRecipientFinished || placedObjects.filter(i => i.recipientId === recipientId).some((i) => !i.value)}
         >
           Save and Complete
         </Button>
@@ -281,8 +287,16 @@ export const TemplateSigner: React.FC = () => {
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 p-6 overflow-auto">
           <div className="max-w-4xl mx-auto">
+            {/* <PdfViewer
+              fileUrl={fileUrl}
+              placedAssets={template.placedAssets}
+              isPlacedValueEdittable={!isRecipientFinished}
+              isPlacedValueVisible={false}
+              setSelectedObject={setSelectedObject}
+
+            /> */}
             <div
-              className="bg-white rounded-lg shadow-lg p-6 relative"
+              className="bg-white rounded-lg shadow-lg relative"
               ref={containerRef}
             >
               <PdfDocument
@@ -297,7 +311,7 @@ export const TemplateSigner: React.FC = () => {
                       key={`page_${index + 1}`}
                       className="relative mb-8 last:mb-0 w-fit "
                     >
-                      <div className="relative border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                      <div className="relative border border-gray-200 rounded-lg overflow-hidden shadow-sm" ref={pageRef}>
                         <Page
                           pageNumber={index + 1}
                           width={width}
@@ -332,7 +346,8 @@ export const TemplateSigner: React.FC = () => {
                               onDelete={() => {}}
                               onResize={() => {}}
                               isReadOnly
-                              isValueEdittable={!isRecipientFinished}
+                              isValueEdittable={!isRecipientFinished && placedAsset.recipientId === recipientId}
+                              isSignerPage
                             />
                           ))}
                       </div>

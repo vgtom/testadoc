@@ -103,7 +103,7 @@ model PlacedAsset {
   xPercent      Float
   yPercent      Float
   widthPercent  Float
-  heightPercent Float
+  heightPercent Float?
 
   document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
   documentId String

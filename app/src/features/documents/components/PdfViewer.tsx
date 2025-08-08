@@ -1,27 +1,52 @@
-import { FC, useEffect, useRef, useState } from "react";
+import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min?url";
 import { PlacedObjectComponent } from "./PlacedObject";
 import { PlacedAsset, Recipient } from "wasp/entities";
 import { Asset, EditType, PlacedObject } from "../types";
+import {
+  OnDocumentLoadSuccess,
+  OnPageLoadSuccess,
+  OnRenderSuccess,
+} from "react-pdf/dist/shared/types.js";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-export type PlacedAssetWithRecipient = PlacedAsset & { recipient: Recipient | null };
+export type PlacedAssetWithRecipient = PlacedAsset & {
+  recipient: Recipient | null;
+};
 
 type PdfViewerProps = {
   fileUrl: string | null;
   placedAssets?: PlacedAssetWithRecipient[];
+  isPlacedValueVisible?: boolean;
+  isPlacedValueEdittable?: boolean;
+  isPlacedReadOnly?: boolean;
+  setSelectedObject?: React.Dispatch<React.SetStateAction<string | null>>;
+  updateObjectPosition?: (
+    id: string,
+    xPercent: number,
+    yPercent: number
+  ) => void;
 };
 
 export const PdfViewer: FC<PdfViewerProps> = ({
   fileUrl,
   placedAssets = [],
+  isPlacedReadOnly = true,
+  isPlacedValueEdittable = false,
+  isPlacedValueVisible = true,
+  setSelectedObject,
+  updateObjectPosition,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const pageRef = useRef<HTMLDivElement | null>(null); // Add ref for page element
+
   const [numPages, setNumPages] = useState<number | null>(null);
   const [width, setWidth] = useState<number>(800);
+  const [pageHeight, setPageHeight] = useState<number>(1000);
+
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -56,19 +81,47 @@ export const PdfViewer: FC<PdfViewerProps> = ({
   }, [placedAssets]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const updateSize = () => {
+      if (!containerRef.current) return;
+      const containerWidth = containerRef.current.offsetWidth;
+      const containerHeight = containerRef.current.offsetHeight;
+      console.log(containerRef.current.classList);
+      if (containerWidth) {
+        const newWidth = containerWidth;
+        setWidth(newWidth);
+        setPageHeight(containerHeight);
 
-    const updateWidth = () => {
-      const containerWidth = containerRef.current?.offsetWidth;
-      if (containerWidth) setWidth(containerWidth - 100);
+        // Don't automatically set pageHeight here anymore
+        // Let it be calculated based on actual PDF dimensions
+      }
     };
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, [containerRef.current]);
 
-    updateWidth();
-    const resizeObserver = new ResizeObserver(updateWidth);
-    resizeObserver.observe(containerRef.current);
+  useEffect(() => {
+    if (!pageRef.current) return;
 
-    return () => resizeObserver.disconnect();
-  }, []);
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { height } = entry.contentRect;
+        if (height > 0 && height !== pageHeight) {
+          console.log("ResizeObserver detected height:", height);
+          setPageHeight(height);
+        }
+      }
+    });
+
+    const pageElement = pageRef.current.querySelector(".react-pdf__Page");
+    if (pageElement) {
+      resizeObserver.observe(pageElement);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [width, pageHeight]);
 
   useEffect(() => {
     if (!fileUrl) {
@@ -93,11 +146,53 @@ export const PdfViewer: FC<PdfViewerProps> = ({
       });
   }, [fileUrl]);
 
-  const handleLoadSuccess = ({ numPages }: { numPages: number }) => {
+  const handleLoadSuccess: OnDocumentLoadSuccess = ({
+    numPages,
+  }: {
+    numPages: number;
+  }) => {
     setNumPages(numPages);
     setIsLoading(false);
     setError(null);
   };
+
+  // Method 1: Handle page render success to get actual dimensions
+  const handlePageRenderSuccess: OnRenderSuccess = useCallback(
+    (page) => {
+      console.log("Page rendered successfully");
+
+      // Get the rendered page element
+      const pageElement = pageRef.current?.querySelector(
+        ".react-pdf__Page__canvas"
+      ) as HTMLCanvasElement;
+      if (pageElement) {
+        const actualHeight = pageElement.height * (width / pageElement.width);
+        console.log("Calculated page height:", actualHeight);
+        setPageHeight(actualHeight);
+      }
+    },
+    [width]
+  );
+
+  // Method 2: Alternative approach using page load success
+  const handlePageLoadSuccess: OnPageLoadSuccess = useCallback(
+    (page: any) => {
+      console.log("Page loaded successfully");
+
+      // Get page dimensions from the PDF page object
+      const { width: pageWidth, height: pageHeightPdf } = page.getViewport({
+        scale: 1,
+      });
+
+      // Calculate the scaled height based on our desired width
+      const scaledHeight = (pageHeightPdf / pageWidth) * width;
+      console.log("PDF Page dimensions:", { pageWidth, pageHeightPdf });
+      console.log("Scaled height:", scaledHeight);
+
+      setPageHeight(scaledHeight);
+    },
+    [width]
+  );
 
   const handleLoadError = (e: Error) => {
     setError(`Failed to load PDF: ${e.message}`);
@@ -105,10 +200,7 @@ export const PdfViewer: FC<PdfViewerProps> = ({
   };
 
   return (
-    <div
-      
-      className="bg-white rounded-lg shadow-lg p-6 relative max-w-full overflow-x-auto"
-    >
+    <div className="bg-white rounded-lg shadow-lg p-6 relative max-w-full overflow-x-auto">
       {isLoading && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg">
           <div className="flex items-center space-x-2">
@@ -127,7 +219,7 @@ export const PdfViewer: FC<PdfViewerProps> = ({
 
       {fileUrl && (
         <div
-        ref={containerRef}
+          ref={containerRef}
           className={`transition-opacity duration-300 ${
             isLoading ? "opacity-70" : "opacity-100"
           }`}
@@ -146,6 +238,7 @@ export const PdfViewer: FC<PdfViewerProps> = ({
                   <div
                     key={`page_${pageNumber}`}
                     className="relative mb-8 last:mb-0 mx-auto"
+                    ref={pageRef} // Add ref here
                   >
                     <div className="relative border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                       <Page
@@ -154,6 +247,8 @@ export const PdfViewer: FC<PdfViewerProps> = ({
                         renderTextLayer={false}
                         renderAnnotationLayer={false}
                         className="pdf-page"
+                        onRenderSuccess={handlePageRenderSuccess}
+                        onLoadSuccess={handlePageLoadSuccess}
                       />
                       <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm">
                         Page {pageNumber}
@@ -169,12 +264,16 @@ export const PdfViewer: FC<PdfViewerProps> = ({
                               (a) => a.id === placedAsset.assetId
                             )}
                             pageWidth={width}
-                            pageHeight={900}
+                            pageHeight={pageHeight}
                             isSelected={false}
-                            setSelectedObject={() => {}}
-                            updateObjectPosition={() => {}}
+                            setSelectedObject={(id) => setSelectedObject?.(id)}
+                            updateObjectPosition={(id, xPercent, yPercent) => {
+                              updateObjectPosition?.(id, xPercent, yPercent);
+                            }}
                             onDelete={() => {}}
-                            isReadOnly={true}
+                            isReadOnly={isPlacedReadOnly}
+                            isValueEdittable={isPlacedValueEdittable}
+                            showValue={isPlacedValueVisible}
                           />
                         ))}
                     </div>

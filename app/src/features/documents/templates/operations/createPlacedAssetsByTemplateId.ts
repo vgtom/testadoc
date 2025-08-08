@@ -19,7 +19,7 @@ const createPlacedAssetsByTemplateIdInputSchema = z.object({
       xPercent: z.number().min(0).max(1),
       yPercent: z.number().min(0).max(1),
       widthPercent: z.number().min(0).max(1),
-      heightPercent: z.number().min(0).max(1),
+      heightPercent: z.number().nullable(),
       recipientId: z.string().uuid(),
     })
   ),

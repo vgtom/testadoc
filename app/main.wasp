@@ -86,11 +86,6 @@ page DocumentPreviewPage {
   component: import DocPreviewPage from "@src/all-pages/DocPreviewPage"
 }
 
-route DocumentEditorRoute { path: "/document_editor/:documentId", to: DocumentEditorPage }
-page DocumentEditorPage {
-  component: import DocEditorPage from "@src/all-pages/DocEditorPage"
-}
-
 // Document Actions
 action createDocument {
   fn: import { createDocument } from "@src/features/documents/operations/createDocument",

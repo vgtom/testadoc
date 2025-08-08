@@ -29,9 +29,9 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
   const [numPages, setNumPages] = useState<number | null>(null);
   const [width, setWidth] = useState<number>(800);
+  const [pageHeight, setPageHeight] = useState<number>(1000);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [pageHeight, setPageHeight] = useState<number>(1000);
   const [showDrawingPanel, setShowDrawingPanel] = useState<boolean>(false);
   const [activeRecipient, setActiveRecipient] = useState<Recipient>();
 
@@ -90,10 +90,12 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
     const updateSize = () => {
       if (!containerRef.current) return;
       const containerWidth = containerRef.current.offsetWidth;
+      const containerHeight = containerRef.current.offsetHeight;
       console.log(containerRef.current.classList)
       if (containerWidth) {
         const newWidth = containerWidth
         setWidth(newWidth);
+        setPageHeight(containerHeight)
         
         // Don't automatically set pageHeight here anymore
         // Let it be calculated based on actual PDF dimensions
@@ -238,7 +240,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           xPercent: pixelsToPercent(x, width),
           yPercent: pixelsToPercent(y, pageHeight),
           widthPercent: .2,
-          heightPercent: .1,
+          heightPercent: null,
           pageNumber,
           color: activeRecipient?.color || "transparent",
           recipientId: activeRecipient?.id,
@@ -331,7 +333,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               >
                 <div
                   key={`page_${activePage}`}
-                  className={`relative mb-8 last:mb-0 cursor-pointer w-fit`}
+                  className={`relative mb-8 last:mb-0 w-fit`}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, activePage)}
                   ref={pageRef} // Add ref here

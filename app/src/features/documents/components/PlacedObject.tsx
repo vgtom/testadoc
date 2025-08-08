@@ -1,11 +1,8 @@
 import React, { FC, useEffect, useRef, useState } from "react";
-import { Move, X } from "lucide-react";
+import { Calendar, Move, Signature, Text, X } from "lucide-react";
 import { Asset, EditType, PlacedObject } from "../types";
 import useDebouncedCallback from "../../../hooks/useDebouncedCallback";
 import { makeColorTransparent } from "../../../lib/utils";
-import TEM_Date from "./TEM_Date";
-import TEM_Initial from "./TEM_Initial";
-import TEM_Sign from "./TEM_Sign";
 
 interface PlacedImageProps {
   placedAsset: PlacedObject;
@@ -25,6 +22,7 @@ interface PlacedImageProps {
   isReadOnly?: boolean;
   isValueEdittable?: boolean;
   showValue?: boolean;
+  isSignerPage?: boolean;
 }
 
 export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
@@ -40,6 +38,7 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
   onResize,
   isReadOnly = false,
   isValueEdittable = false,
+  isSignerPage = false,
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const start = useRef({ x: 0, y: 0 });
@@ -52,9 +51,13 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
   const [currentWidth, setCurrentWidth] = useState(
     placedAsset.widthPercent * pageWidth
   );
-  const [currentHeight, setCurrentHeight] = useState(
-    placedAsset.heightPercent * pageHeight
+  const [currentHeight, setCurrentHeight] = useState<number | null>(
+    placedAsset.heightPercent != null
+      ? placedAsset.heightPercent * pageHeight
+      : null // Allow null as initial state
   );
+
+  const dynamicFontSize = 0.02 * pageWidth;
 
   const debouncedUpdate = useDebouncedCallback(updateObjectPosition, 300);
   const debouncedResize = useDebouncedCallback(
@@ -67,10 +70,58 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
   );
 
   useEffect(() => {
+    if (isSelected && ref.current) {
+      let parent = ref.current.parentElement;
+      let scrollableParent: HTMLElement | null = null;
+
+      while (parent) {
+        const { overflowY, overflowX } = window.getComputedStyle(parent);
+        if (
+          overflowY === "auto" ||
+          overflowY === "scroll" ||
+          overflowX === "auto" ||
+          overflowX === "scroll"
+        ) {
+          scrollableParent = parent;
+          break;
+        }
+        parent = parent.parentElement;
+      }
+
+      if (scrollableParent) {
+        const assetRect = ref.current.getBoundingClientRect();
+        const parentRect = scrollableParent.getBoundingClientRect();
+
+        const isOutOfViewTop = assetRect.top < parentRect.top;
+        const isOutOfViewBottom = assetRect.bottom > parentRect.bottom;
+        const isOutOfViewLeft = assetRect.left < parentRect.left;
+        const isOutOfViewRight = assetRect.right > parentRect.right;
+
+        if (
+          isOutOfViewTop ||
+          isOutOfViewBottom ||
+          isOutOfViewLeft ||
+          isOutOfViewRight
+        ) {
+          ref.current.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+            inline: "start",
+          });
+        }
+      }
+    }
+  }, [isSelected]);
+
+  useEffect(() => {
     setLeft(placedAsset.xPercent * pageWidth);
     setTop(placedAsset.yPercent * pageHeight);
     setCurrentWidth(placedAsset.widthPercent * pageWidth);
-    setCurrentHeight(placedAsset.heightPercent * pageHeight);
+    setCurrentHeight(
+      placedAsset.heightPercent != null
+        ? placedAsset.heightPercent * pageHeight
+        : null
+    );
   }, [
     placedAsset.xPercent,
     placedAsset.yPercent,
@@ -96,6 +147,9 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
       const moveDistance = e.shiftKey ? 10 : 2;
       let newLeft = left;
       let newTop = top;
+
+      // Use fallback height for boundary checks if currentHeight is null
+      const effectiveHeight = currentHeight ?? 50;
 
       switch (e.key) {
         case "Delete":
@@ -123,7 +177,7 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
 
         case "ArrowDown":
           e.preventDefault();
-          newTop = Math.min(parent?.height - currentHeight, top + moveDistance);
+          newTop = Math.min(parent?.height - effectiveHeight, top + moveDistance);
           break;
 
         default:
@@ -167,6 +221,7 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
     if (isResizing) return;
     e.preventDefault();
     e.stopPropagation();
+    console.log("Value edittable");
 
     const element = ref.current;
     if (!element) return;
@@ -180,19 +235,24 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
 
       const handleMouseMove = (ev: MouseEvent) => {
         if (!element || !element.parentElement) return;
-        element.parentElement.style.backgroundColor = "black";
-
         const parent = element.parentElement.getBoundingClientRect();
 
         let newLeft = ev.clientX - parent.left - start.current.x;
         let newTop = ev.clientY - parent.top - start.current.y;
 
+        // Use fallback height for boundary checks if currentHeight is null
+        const effectiveHeight = currentHeight ?? 50;
+
         newLeft = Math.max(0, Math.min(newLeft, parent.width - currentWidth));
-        newTop = Math.max(0, Math.min(newTop, parent.height - currentHeight));
+        newTop = Math.max(0, Math.min(newTop, parent.height - effectiveHeight));
 
         setLeft(newLeft);
         setTop(newTop);
-        debouncedUpdate(placedAsset.id, newLeft / pageWidth, newTop / pageHeight);
+        debouncedUpdate(
+          placedAsset.id,
+          newLeft / pageWidth,
+          newTop / pageHeight
+        );
       };
 
       const handleMouseUp = () => {
@@ -219,7 +279,7 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
     const startX = e.clientX;
     const startY = e.clientY;
     const startWidth = currentWidth;
-    const startHeight = currentHeight;
+    const startHeight = currentHeight ?? 50; // Use fallback if null
     const startLeft = left;
     const startTop = top;
 
@@ -233,37 +293,34 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
       let newTop = startTop;
 
       if (direction === "bottom-right") {
-        // Only update width and height, keep position fixed
         newWidth = Math.max(50, startWidth + deltaX);
         newHeight = Math.max(30, startHeight + deltaY);
-      } else {
-        // Handle other directions as before
-        if (direction.includes("right")) {
-          newWidth = Math.max(50, startWidth + deltaX);
-        }
-        if (direction.includes("left")) {
-          newWidth = Math.max(50, startWidth - deltaX);
-          newLeft = startLeft + (startWidth - newWidth);
-        }
-        if (direction.includes("bottom")) {
-          newHeight = Math.max(30, startHeight + deltaY);
-        }
-        if (direction.includes("top")) {
-          newHeight = Math.max(30, startHeight - deltaY);
-          newTop = startTop + (startHeight - newHeight);
-        }
+        // Keep position fixed
+      } else if (direction === "bottom-left") {
+        newWidth = Math.max(50, startWidth - deltaX);
+        newLeft = startLeft + (startWidth - newWidth);
+        newHeight = Math.max(30, startHeight + deltaY);
+      } else if (direction === "top-right") {
+        newWidth = Math.max(50, startWidth + deltaX);
+        newHeight = Math.max(30, startHeight - deltaY);
+        newTop = startTop + (startHeight - newHeight);
+      } else if (direction === "top-left") {
+        newWidth = Math.max(50, startWidth - deltaX);
+        newLeft = startLeft + (startWidth - newWidth);
+        newHeight = Math.max(30, startHeight - deltaY);
+        newTop = startTop + (startHeight - newHeight);
       }
 
       if (asset?.type === EditType.IMAGE && e.shiftKey) {
         const aspectRatio = startWidth / startHeight;
         if (Math.abs(deltaX) > Math.abs(deltaY)) {
           newHeight = newWidth / aspectRatio;
-          if (direction.includes("top") && direction !== "bottom-right") {
+          if (direction.includes("top")) {
             newTop = startTop + (startHeight - newHeight);
           }
         } else {
           newWidth = newHeight * aspectRatio;
-          if (direction.includes("left") && direction !== "bottom-right") {
+          if (direction.includes("left")) {
             newLeft = startLeft + (startWidth - newWidth);
           }
         }
@@ -285,9 +342,12 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
         newHeight / pageHeight
       );
 
-      // Update position only if not bottom-right resizing
-      if (direction !== "bottom-right") {
-        debouncedUpdate(placedAsset.id, newLeft / pageWidth, newTop / pageHeight);
+      if (direction.includes("left") || direction.includes("top")) {
+        debouncedUpdate(
+          placedAsset.id,
+          newLeft / pageWidth,
+          newTop / pageHeight
+        );
       }
     };
 
@@ -301,52 +361,12 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
     document.addEventListener("mouseup", handleMouseUp);
   };
 
-  const getObjectContent = () => {
-    if (asset?.type === EditType.IMAGE) {
-      return (
-        <img
-          src={asset?.dataUrl}
-          alt="Document element"
-          className="w-full h-full object-contain"
-          draggable={false}
-        />
-      );
-    }
-
-    switch (asset?.type) {
-      case EditType.TEMPLATE_DATE:
-        return (
-          <TEM_Date
-            placedAsset={placedAsset}
-            isValueEdittable={isValueEdittable}
-          />
-        );
-
-      case EditType.TEMPLATE_INITIAL:
-        return (
-          <TEM_Initial
-            placedAsset={placedAsset}
-            isValueEdittable={isValueEdittable}
-          />
-        );
-
-      case EditType.TEMPLATE_SIGN:
-        return (
-          <TEM_Sign
-            placedAsset={placedAsset}
-            isValueEdittable={isValueEdittable}
-          />
-        );
-
-      default:
-        return null;
-    }
-  };
-
   if (!placedAsset || !asset) return null;
 
+  if (isSignerPage && !isValueEdittable && !placedAsset.value) return null;
+
   const objectWidth = currentWidth;
-  const objectHeight = currentHeight;
+  const objectHeight = currentHeight ?? ""; // Fallback height for rendering
 
   return (
     <div
@@ -355,9 +375,9 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
       onMouseEnter={() => !isReadOnly && setShowControls(true)}
       onMouseLeave={() => !isSelected && setShowControls(false)}
       className={`
-        absolute group 
-        ${isValueEdittable && isReadOnly ? "cursor-pointer" : "cursor-move"}
-        ${isDragging ? "scale-[1.02] z-50 shadow-lg" : "z-10"}
+        absolute group border
+        ${isValueEdittable ? "cursor-pointer" : isReadOnly ? "" : "cursor-move"}
+        ${isDragging ? "z-50" : "z-10"}
         ${isSelected ? "ring-2 ring-blue-500" : ""}
         ${showControls && !isReadOnly ? "hover:ring-1 hover:ring-blue-300" : ""}
         ${isResizing ? "pointer-events-none" : ""}
@@ -367,11 +387,46 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
         top,
         width: objectWidth,
         height: objectHeight,
+        backgroundColor:
+          makeColorTransparent(
+            placedAsset.color || "#ffffff",
+            placedAsset.value && !isValueEdittable ? 0 : 60
+          ) || "#ffffff",
+        borderColor: placedAsset.value
+          ? "transparent"
+          : placedAsset.color || "transparent",
       }}
       tabIndex={isSelected ? 0 : -1}
     >
       <div className="w-full h-full relative overflow-hidden shadow-sm">
-        {getObjectContent()}
+        {placedAsset.value ? (
+          placedAsset.type === EditType.TEMPLATE_SIGN ? (
+            <img src={placedAsset.value} alt="" />
+          ) : (
+            <div style={{ fontSize: dynamicFontSize }}>{placedAsset.value}</div>
+          )
+        ) : (
+          <div className="flex gap-1">
+            {placedAsset.type === EditType.TEMPLATE_DATE && (
+              <Calendar size={dynamicFontSize} />
+            )}
+            {placedAsset.type === EditType.TEMPLATE_INITIAL && (
+              <Text size={dynamicFontSize} />
+            )}
+            {placedAsset.type === EditType.TEMPLATE_SIGN && (
+              <Signature size={dynamicFontSize} />
+            )}
+
+            <span
+              className="font-medium text-gray-700 tracking-wide"
+              style={{ fontSize: dynamicFontSize }}
+            >
+              {placedAsset.type === EditType.TEMPLATE_DATE && "Date"}
+              {placedAsset.type === EditType.TEMPLATE_INITIAL && "Initial"}
+              {placedAsset.type === EditType.TEMPLATE_SIGN && "Signature"}
+            </span>
+          </div>
+        )}
       </div>
 
       {showControls && !isReadOnly && (
@@ -407,23 +462,23 @@ export const PlacedObjectComponent: React.FC<PlacedImageProps> = ({
         <>
           <div
             onMouseDown={(e) => handleResizeStart(e, "bottom-right")}
-            className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-600 border-2 border-white rounded-full cursor-se-resize hover:bg-blue-700 transition-colors shadow-md pointer-events-auto z-20 group/resize"
-          >
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover/resize:opacity-100 transition-opacity duration-150 pointer-events-none">
-              Resize
-            </div>
-          </div>
+            className="absolute -bottom-1 -right-1 w-[8px] h-[8px] border border-blue-600 rounded-full cursor-se-resize hover:bg-blue-700 transition-colors shadow-sm pointer-events-auto z-10"
+            style={{ backgroundColor: placedAsset.color }}
+          />
           <div
             onMouseDown={(e) => handleResizeStart(e, "bottom-left")}
-            className="absolute -bottom-1 -left-1 w-3 h-3 bg-blue-600 border-2 border-white rounded-sm cursor-sw-resize hover:bg-blue-700 transition-colors shadow-sm pointer-events-auto z-10"
+            className="absolute -bottom-1 -left-1 w-[8px] h-[8px] border border-blue-600 rounded-full cursor-sw-resize hover:bg-blue-700 transition-colors shadow-sm pointer-events-auto z-10"
+            style={{ backgroundColor: placedAsset.color }}
           />
           <div
             onMouseDown={(e) => handleResizeStart(e, "top-right")}
-            className="absolute -top-1 -right-1 w-3 h-3 bg-blue-600 border-2 border-white rounded-sm cursor-ne-resize hover:bg-blue-700 transition-colors shadow-sm pointer-events-auto z-10"
+            className="absolute -top-1 -right-1 w-[8px] h-[8px] border border-blue-600 rounded-full cursor-ne-resize hover:bg-blue-700 transition-colors shadow-sm pointer-events-auto z-10"
+            style={{ backgroundColor: placedAsset.color }}
           />
           <div
             onMouseDown={(e) => handleResizeStart(e, "top-left")}
-            className="absolute -top-1 -left-1 w-3 h-3 bg-blue-600 border-2 border-white rounded-sm cursor-nw-resize hover:bg-blue-700 transition-colors shadow-sm pointer-events-auto z-10"
+            className="absolute -top-1 -left-1 w-[8px] h-[8px] border border-blue-600 rounded-full cursor-nw-resize hover:bg-blue-700 transition-colors shadow-sm pointer-events-auto z-10"
+            style={{ backgroundColor: placedAsset.color }}
           />
         </>
       )}

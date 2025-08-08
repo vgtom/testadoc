@@ -31,6 +31,8 @@ import { Recipient } from "wasp/entities";
 import { Pencil, Trash2 } from "lucide-react";
 import { deleteRecipient } from "wasp/client/operations"; // ✅ Add these
 import { uploadDocumentWithProgress } from "../../documentUploading";
+import { CgProfile } from "react-icons/cg";
+import { makeColorTransparent } from "../../../../lib/utils";
 
 const templateAssetTools: Asset[] = [
   {
@@ -214,9 +216,9 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
           const y =
             pageHeight -
             overlay.yPercent * pageHeight -
-            overlay.heightPercent * pageHeight;
+            (overlay.heightPercent || 0) * pageHeight;
           const w = overlay.widthPercent * pageWidth;
-          const h = overlay.heightPercent * pageHeight;
+          const h = (overlay.heightPercent || 0) * pageHeight;
           page.drawImage(pngImage, { x, y, width: w, height: h });
         }
       }
@@ -340,14 +342,22 @@ const TemplateEditorToolbar: FC<DocTemplateEditorToolbarProp> = ({
                 onClick={() => {
                   setActiveRecipient(recipient);
                 }}
-                style={{ backgroundColor: recipient.color || "transparent" }}
+                style={{
+                  backgroundColor:
+                    makeColorTransparent(
+                      recipient.color || "transparent",
+                      10
+                    ) || "transparent",
+                  borderColor:
+                    activeRecipient?.id === recipient.id ? recipient.color || "transparent" : "",
+                }}
                 className={cn(
-                  "p-2 bg-gray-100 text-sm text-gray-700 border-2 border-transparent rounded-lg cursor-pointer flex justify-between items-center group",
-                  activeRecipient?.id === recipient.id ? "border-black" : ""
+                  "p-2 bg-gray-100 text-sm text-gray-700 border-2 border-transparent rounded-lg cursor-pointer flex   items-center group gap-1 relative"
                 )}
               >
-                <span>{recipient.contact.email}</span>
-                <span className="flex gap-1 opacity-0 group-hover:opacity-100">
+                <CgProfile color={recipient.color || "transparent"} />
+                <span className=" text-sm"> {recipient.contact.email}</span>
+                <span className="flex gap-1 opacity-0 group-hover:opacity-100 absolute right-3 bg-white p-2 ">
                   <button
                     className="text-gray-600 hover:text-black"
                     onClick={(e) => {

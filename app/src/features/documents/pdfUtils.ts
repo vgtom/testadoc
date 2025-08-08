@@ -220,11 +220,6 @@ export async function downloadPdfWithOverlay(pdfUrl: string, overlay: PlacedAsse
   }
 
   try {
-    // const response = await fetch(pdfUrl, { method: "HEAD" });
-    // if (!response.ok) {
-    //   throw new Error(`Failed to access PDF: ${response.statusText}`);
-    // }
-
     const pdfDoc = await pdfjs.getDocument(pdfUrl).promise;
     const numPages = pdfDoc.numPages;
 
@@ -267,7 +262,8 @@ export async function downloadPdfWithOverlay(pdfUrl: string, overlay: PlacedAsse
         const x = asset.xPercent * PDF_WIDTH;
         const y = asset.yPercent * PDF_HEIGHT;
         const width = asset.widthPercent * PDF_WIDTH;
-        const height = asset.heightPercent * PDF_HEIGHT;
+        // Use fallback height if heightPercent is null or undefined
+        const height = asset.heightPercent != null ? asset.heightPercent * PDF_HEIGHT : 30;
 
         if (asset.type === EditType.TEMPLATE_INITIAL && asset.value) {
           doc.setFontSize(12);

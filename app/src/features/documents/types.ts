@@ -32,7 +32,7 @@ export interface PlacedObject {
   xPercent: number;
   yPercent: number;
   widthPercent: number;
-  heightPercent: number;
+  heightPercent: number | null;
   pageNumber: number;
   recipientId: string;
   color?: string;
